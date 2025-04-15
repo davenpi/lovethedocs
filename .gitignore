@@ -1,1 +1,5 @@
+# environment
 venv/
+.env
+
+.vscode/
