@@ -3,6 +3,15 @@ import random
 
 
 class Greeter:
+    """
+    A class to greet and bid farewell to a person.
+
+    Attributes
+    ----------
+    name : str
+        The name of the person to greet.
+    """
+
     def __init__(self, name: str) -> None:
         """
         Initialize the Greeter with a name.
@@ -27,7 +36,7 @@ class Greeter:
         print(f"Goodbye, {self.name}!")
 
     @classmethod
-    def from_env(cls) -> "Greeter":
+    def from_env(cls) -> 'Greeter':
         """
         Create a Greeter instance using the name from the environment variable.
 
@@ -59,7 +68,7 @@ def create_greeter(name: str) -> Greeter:
 
 def rand_greet() -> None:
     """
-    Randomly greet one of the predefined names.
+    Randomly greet a person from a predefined list of names.
     """
     names = ["Alice", "Bob", "Charlie", "Diana"]
     name = random.choice(names)

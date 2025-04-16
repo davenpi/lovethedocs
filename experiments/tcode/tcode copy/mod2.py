@@ -1,10 +1,7 @@
 import mod1 as m1
 
 
-def greet() -> None:
-    """
-    Print a greeting message from mod2.
-    """
+def greet():
     print("Hello from mod2!")
 
 

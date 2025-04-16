@@ -1,6 +1,7 @@
 import os
 
 from dotenv import dotenv_values
+from openai import OpenAI
 
 config = dotenv_values(".env")
 API_KEY = config["OPENAI_API_KEY"]
@@ -58,6 +59,10 @@ Format your response as follows:
     <updated module code>
     END <module2_name>.py
     ...
+
+Return a response for each module even if the module is very similar to the others it
+has been concatenated with. This is imperative. Otherwise the user will be confused
+and not benefit from your help.
 
 To summarize - You'll be given a python module or a series of modules and your job is
 to analyze the code and generate improved docstrings for functions and classes. Only
@@ -134,6 +139,7 @@ def concatenate_modules(path: list) -> str:
         with open(os.path.join(path, f"{module}.py"), "r") as f:
             code += f.read()
         code += "\nEND" + f" {module}.py\n"
+    print(f"Concatenated {modules} into a single string.")
     return code
 
 
@@ -173,6 +179,7 @@ def parse_response(response: str) -> dict:
     modules = {}
     for line in response.splitlines():
         if line.startswith("LOVE THE DOCS"):
+            print(f"Parsing: {line}")
             module = line.split()[3]
             module = os.path.splitext(module)[0]
             modules[module] = ""
@@ -180,6 +187,8 @@ def parse_response(response: str) -> dict:
             continue
         else:
             modules[module] += line + "\n"
+
+    print(f"MODULE KEYS: {modules.keys()}")
     return modules
 
 
@@ -198,7 +207,7 @@ def write_response(modules: dict, path: str) -> None:
     -------
     None
     """
-    improved_path = path + "_improved"
+    improved_path = os.path.join(path, "_improved")
     os.makedirs(improved_path, exist_ok=True)
     for module, code in modules.items():
         with open(os.path.join(improved_path, module + ".py"), "w") as f:
@@ -206,4 +215,74 @@ def write_response(modules: dict, path: str) -> None:
             code = strip_format(code)
             # Write the code to the file
             f.write(code)
-        print(f"Updated {module} with new docstrings.")
+        print(
+            f"Updated '{module}.py' with new docstrings at {os.path.join(improved_path, module + '.py')}"
+        )
+
+
+def edit_all_dirs(client: OpenAI, path: str) -> None:
+    """
+    Edit all directories in the given path.
+
+    Parameters
+    ----------
+    path : str
+        The path to the directory containing the modules.
+
+    Returns
+    -------
+    None
+    """
+    # handle modules in the base directory
+    print("-" * 20)
+    print(f"HANDLING ROOT DIR")
+    code = concatenate_modules(path)
+    response_code = run_inference(client, code)
+    module_code_dict = parse_response(response_code)
+    write_response(module_code_dict, path)
+    print("-" * 20)
+    print("\n\n")
+
+    # handle subdirectories
+    for root, dirs, files in os.walk(path):
+        print("-" * 20)
+
+        for dir in dirs:
+            print(f"CURRENT DIR: {dir}")
+            if dir.endswith("_improved"):
+                continue
+            dir_path = os.path.join(root, dir)
+            code = concatenate_modules(dir_path)
+            if not code:
+                continue
+            response_code = run_inference(client, code)
+            print(f"RESPONSE CODE: {response_code}")
+            module_code_dict = parse_response(response_code)
+            write_response(module_code_dict, dir_path)
+            print("-" * 20)
+            print("\n\n")
+
+
+def run_inference(client: OpenAI, content: str) -> str:
+    """
+    Run inference on the given content.
+
+    Parameters
+    ----------
+    client : OpenAI
+        The OpenAI client.
+    content : str
+        The content to run inference on.
+
+    Returns
+    -------
+    str
+        The response from OpenAI.
+    """
+    response = client.responses.create(
+        model="gpt-4o-mini",
+        instructions=DEV_PROMPT,
+        input=[{"role": "user", "content": content}],
+        temperature=0,
+    )
+    return response.output[0].content[0].text

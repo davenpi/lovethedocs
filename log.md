@@ -10,6 +10,13 @@
 
 ## Challenges
 
+- **Strange**: If we concatenate two very similar modules with one being the improved
+  version of the other, the system tries to only respond with one version of the file.
+  For example, with `OG_sample_improved.py` and `sample.py` as the modules, the system
+  tries to respond with only `sample.py` in the improved folder. I added a system
+  prompt to enforce the correct behavior of editing every file. Check
+  `experiments/og/prompt_diffs` for a fuller explanation.
+- Improve perfomrance e.g., make sure unused variables are highlighted in `sample.py`
 - Will need to have a more consistent definition of "quality" for each package
   that we work with. Want to keep diffs small and match style.
 - The way to properly document depends on the version of python we are using. For
@@ -39,7 +46,7 @@
           self.radius = radius
           return self
   Circle().set_scale(0.5).set_radius(2.7)  # => Circle
-  # If we didn't use `TShape` and instead used `Shape` as the type hint on `set_scale`
+  # If we didn't use `TShape` and instead used `Shape` as the type hint on `set_scale`,
   # that code would error. Calling `set_scale` would return a `Shape` which has no
   # `set_radius` method.
   ```
