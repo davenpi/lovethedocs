@@ -30,13 +30,16 @@ following format:
         \"""
 
 Do not include the longer description in the docstring if it is not needed. For simple
-functions the one line description is sufficient. It's important to be concise and
-brief. The docstring should be clear and easy to read. Avoid repeating unnecessary
-information that is obvious from the code. 
+functions the one line description is sufficient. It's important to be concise. The
+docstring should be clear and easy to read. Avoid repeating unnecessary information.
+that is obvious from the code.
 
-To summarize: You'll be given a python module and your job is to analyze the
-code and generate improved docstrings functions and classes. Only add
-docstrings. Do not change the code at all and do not say anything else in your
+If a function or class has a quality docstring already, do not change it.
+
+To summarize - You'll be given a python module and your job is to analyze the
+code and generate improved docstrings for functions and classes. Only add
+docstrings. Also, only edit the docstrings that genuinely need improvement. We want to
+keep diffs as small. Do not change the code at all and do not say anything else in your
 response. Your work speaks for itself. Remember that!"""
 
 

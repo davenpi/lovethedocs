@@ -7,7 +7,7 @@ import random
 
 def print_random_numbers(n: int) -> None:
     """
-    Print n random numbers.
+    Print n random numbers between 0 and 10.
 
     Parameters
     ----------
@@ -20,18 +20,15 @@ def print_random_numbers(n: int) -> None:
 
 
 class Randy:
-    """
-    Class to represent a random number generator.
-    """
 
     def __init__(self, n: int) -> None:
         """
-        Initialize the Randy object with a random number.
+        Initialize Randy with a random number.
 
         Parameters
         ----------
         n : int
-            The number of times to generate a random number (not used).
+            The number of random numbers to generate (not used).
         """
         self.n = n
         self.r = random.randint(0, 10)

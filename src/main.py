@@ -43,6 +43,7 @@ response = client.responses.create(
     model="gpt-4o-mini",
     instructions=DEV_PROMPT,
     input=[{"role": "user", "content": code}],
+    temperature=0,
 )
 
 
