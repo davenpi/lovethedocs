@@ -1,5 +1,7 @@
 # Explaining strange behavior
 
+## model 4o-mini-2024-07-18
+
 With the prompt:
 
 ```python

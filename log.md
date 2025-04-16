@@ -2,6 +2,7 @@
 
 ## Improvements
 
+- Using gpt-4.1 makes this much better. It follows instructions better on formatting.
 - Can edit a directory of code.
 - Now have deterministic edits (temperature = 0)
 - Tweaked the system prompt to only edit the functions that "need it" and tested
@@ -10,6 +11,7 @@
 
 ## Challenges
 
+- Why can't I get trailing tics? Python code is not closed with ``` as expected. USE A SMARTER MODEL (4o or 4.1) and it works.
 - **Strange**: If we concatenate two very similar modules with one being the improved
   version of the other, the system tries to only respond with one version of the file.
   For example, with `OG_sample_improved.py` and `sample.py` as the modules, the system

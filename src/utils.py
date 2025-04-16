@@ -6,6 +6,9 @@ from openai import OpenAI
 config = dotenv_values(".env")
 API_KEY = config["OPENAI_API_KEY"]
 
+START_PHRASE = "START lovethedocs"
+END_PHRASE = "END lovethedocs"
+
 DEV_PROMPT = f"""Your job is to be a benevolent documentation assistant. You are
 a master of docstrings and of understanding python code. You've spent a long time
 developing your docstring style. You are now going to help a user improve the
@@ -41,24 +44,29 @@ do not change it.
 You'll be passed a python module or series of modules. They will be formatted as
 follows:
 
-    BEGIN <module1_name>.py
-    <module code>
-    END <module1_name>.py
+BEGIN <module1_name>.py
+<module code>
+END <module1_name>.py
 
-    BEGIN <module2_name>
-    <module code>
-    END <module2_name>
-    ...
+BEGIN <module2_name>
+<module code>
+END <module2_name>
+...
 
 Format your response as follows:
-    LOVE THE DOCS <module1_name>.py
-    <updated module code>
-    END <module1_name>.py
 
-    LOVE THE DOCS <module2_name>.py
-    <updated module code>
-    END <module2_name>.py
-    ...
+{START_PHRASE} <module1_name>.py
+```python
+<updated module code>
+```
+{END_PHRASE} <module1_name>.py
+
+{START_PHRASE} <module2_name>.py
+```python
+<updated module code>
+```
+{END_PHRASE} <module2_name>.py
+...
 
 Return a response for each module even if the module is very similar to the others it
 has been concatenated with. This is imperative. Otherwise the user will be confused
@@ -76,10 +84,13 @@ def strip_format(text: str) -> str:
     """
     Strip formatting from the text.
 
-    GPT may respond with:
+    GPT will respond with:
+    LOVE THE DOCS <module_name>.py
     ```python
-        code
+    code
     ```
+    END <module_name>.py
+
     We need to remove that formatting and write it directly as a valid python code.
 
     Parameters
@@ -143,18 +154,20 @@ def concatenate_modules(path: list) -> str:
     return code
 
 
+# TODO: Make less vulnerable to changes in the response format. Continue to work on
+# this to make it more robust.
 def parse_response(response: str) -> dict:
     """
     Parse the response from OpenAI.
 
     The response will be in the format:
-    LOVE THE DOCS <module1_name>.py
+    {START_PHRASE} <module1_name>.py
     <updated module code>
-    END <module1_name>.py
+    {END_PHRASE} <module1_name>.py
 
-    LOVE THE DOCS <module2_name>.py
+    {START_PHRASE} <module2_name>.py
     <updated module code>
-    END <module2_name>.py
+    {END_PHRASE} <module2_name>.py
     ...
 
     This function will extract the module names and updated code from the response.
@@ -178,14 +191,20 @@ def parse_response(response: str) -> dict:
     """
     modules = {}
     for line in response.splitlines():
-        if line.startswith("LOVE THE DOCS"):
-            print(f"Parsing: {line}")
-            module = line.split()[3]
+        if line.startswith(START_PHRASE):
+            # TODO: get module name without hardcoding position
+            module = line.split()[2]
+            print(f"PARSING MODULE: {module}")
+
             module = os.path.splitext(module)[0]
             modules[module] = ""
-        elif line.startswith("END"):
+        elif line.startswith(END_PHRASE):
             continue
         else:
+            # NOTE: This is getting the blank line after END module.py
+            # and putting it in the module code. The last module in
+            # the response won't have a blank line at the end since
+            # the model stops it's output after END last_module.py
             modules[module] += line + "\n"
 
     print(f"MODULE KEYS: {modules.keys()}")
@@ -210,14 +229,15 @@ def write_response(modules: dict, path: str) -> None:
     improved_path = os.path.join(path, "_improved")
     os.makedirs(improved_path, exist_ok=True)
     for module, code in modules.items():
-        with open(os.path.join(improved_path, module + ".py"), "w") as f:
-            # Strip formatting from the code
-            code = strip_format(code)
-            # Write the code to the file
-            f.write(code)
-        print(
-            f"Updated '{module}.py' with new docstrings at {os.path.join(improved_path, module + '.py')}"
-        )
+        if module:  # handle empty module names
+            with open(os.path.join(improved_path, module + ".py"), "w") as f:
+                # Strip formatting from the code
+                code = strip_format(code)
+                # Write the code to the file
+                f.write(code)
+            print(
+                f"Updated '{module}.py' with new docstrings at {os.path.join(improved_path, module + '.py')}"
+            )
 
 
 def edit_all_dirs(client: OpenAI, path: str) -> None:
@@ -280,9 +300,10 @@ def run_inference(client: OpenAI, content: str) -> str:
         The response from OpenAI.
     """
     response = client.responses.create(
-        model="gpt-4o-mini",
+        model="gpt-4.1-2025-04-14",
         instructions=DEV_PROMPT,
         input=[{"role": "user", "content": content}],
         temperature=0,
     )
+    print(f"RESPONSE: {response.output[0].content[0].text}")
     return response.output[0].content[0].text

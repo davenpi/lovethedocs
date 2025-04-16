@@ -7,3 +7,9 @@ venv/
 # Python
 __pycache__/
 *.py[cod]
+
+# pytest
+*.pytest_cache/
+
+# dummy code
+samp/
