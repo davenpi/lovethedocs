@@ -76,7 +76,7 @@ class CodeEditor:
 
     def process_directory(self, path: str | Path) -> None:
         """
-        Process all Python modules in the specified directory.
+        Process all Python modules in the given directory.
 
         Parameters
         ----------
@@ -146,15 +146,15 @@ follows:
 Format your response as follows:
 
     {self.start_phrase} <module1_name>.py
-    ```python
+    
     <updated module code>
-    ```
+    
     {self.end_phrase} <module1_name>.py
 
     {self.start_phrase} <module2_name>.py
-    ```python
+    
     <updated module code>
-    ```
+    
     {self.end_phrase} <module2_name>.py
     ...
 

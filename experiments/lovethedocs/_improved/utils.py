@@ -11,10 +11,10 @@ def strip_format(text: str) -> str:
     For each module the model will respond with the updated code in the following
     format:
 
-        "```python
+        "
         def foo():
             pass
-        ```"
+        "
 
     This function removes the surrounding markdown formatting and returns just the
     code.
@@ -27,18 +27,18 @@ def strip_format(text: str) -> str:
     Returns
     -------
     str
-        The text without formatting. For example, given:
+        The text without formatting. For example, given::
 
-            "```python
+            "
             def foo():
                 pass
-            ```"
+            "
         This function will return::
 
             def foo():
                 pass
     """
-    return text.replace("```python", "").replace("```", "").strip()
+    return text.replace("", "").replace("", "").strip()
 
 
 def load_modules(path: str | Path) -> list:
@@ -193,6 +193,18 @@ def write_response(module_code_dict: dict, path: str | Path) -> None:
 def _iter_project_dirs(base: Path, ignored: set[str] = IGNORED_DIRS) -> Iterable[Path]:
     """
     Recursively yield directories in base that are not in the ignored set.
+
+    Parameters
+    ----------
+    base : Path
+        The base directory to start searching from.
+    ignored : set of str, optional
+        Set of directory names to ignore. Defaults to IGNORED_DIRS.
+
+    Yields
+    ------
+    Path
+        Paths to directories not in the ignored set.
     """
     for path in base.iterdir():
         if path.is_dir():

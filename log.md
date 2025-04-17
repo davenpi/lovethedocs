@@ -1,7 +1,10 @@
 # Log
 
+A place to note improvements and challenges as they come up. Most recent at the top.
+
 ## Improvements
 
+- Encapsulated
 - Using gpt-4.1 makes this much better. It follows instructions better on formatting.
 - Can edit a directory of code.
 - Now have deterministic edits (temperature = 0)
@@ -11,6 +14,10 @@
 
 ## Challenges
 
+- NOTE: GPT strips the "```python" markdown formatting in the docs. I found this
+specifically when I ran `lovethedocs`on the source code of this directory. It removed
+the formatting from the examples in the `strip_format`function in the`src.utils`
+  module. IT ALSO EDITED THE CODE. I will try to fix this with system prompting.
 - Why can't I get trailing tics? Python code is not closed with ``` as expected. USE A SMARTER MODEL (4o or 4.1) and it works.
 - **Strange**: If we concatenate two very similar modules with one being the improved
   version of the other, the system tries to only respond with one version of the file.
