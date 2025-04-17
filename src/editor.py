@@ -11,7 +11,11 @@ from src import utils
 class CodeEditor:
 
     def __init__(
-        self, client: OpenAI, model: str, start_phrase: str, end_phrase: str
+        self,
+        client: OpenAI,
+        model: str,
+        start_phrase: str = "BEGIN lovethedocs",
+        end_phrase: str = "END lovethedocs",
     ) -> None:
         """
         Initialize the CodeEditor with OpenAI client and model parameters.
@@ -21,19 +25,10 @@ class CodeEditor:
         client : OpenAI
             The OpenAI client for making API calls.
         model : str
-            The model to use for code editing. For example::
-
-                "gpt-4o"
-
-        start_phrase : str
-            The phrase indicating the start of the code to be edited. For example::
-
-                "BEGIN lovethedocs"
-
-        end_phrase : str
-            The phrase indicating the end of the code to be edited. For example::
-
-                "END lovethedocs"
+            The model to use for code editing. For example, "gpt-4.1".
+        start_phrase, end_phrase : str , optional
+            Internal markers used for model formatting. Defaults are suitable for most
+            users.
         """
         self.client = client
         self.model = model
@@ -41,7 +36,29 @@ class CodeEditor:
         self.end_phrase = end_phrase
         self.dev_prompt = self._create_prompt()
 
-    def run_inference(self, content: str) -> str:
+    def process_directory(self, path: str | Path) -> None:
+        """
+        Process all Python modules in the specified directory.
+
+        Parameters
+        ----------
+        path : str | Path
+            The path to the directory to process.
+
+        Returns
+        -------
+        None
+        """
+        code = utils.concatenate_modules(path)
+        if not code:
+            return
+        response_code = self._run_inference(code)
+        module_code_dict = utils.parse_response(
+            response_code, self.start_phrase, self.end_phrase
+        )
+        utils.write_response(module_code_dict, path)
+
+    def _run_inference(self, content: str) -> str:
         """
         Run inference on the given content using the OpenAI client.
 
@@ -73,28 +90,6 @@ class CodeEditor:
             temperature=0,
         )
         return response.output[0].content[0].text
-
-    def process_directory(self, path: str | Path) -> None:
-        """
-        Process all Python modules in the specified directory.
-
-        Parameters
-        ----------
-        path : str | Path
-            The path to the directory to process.
-
-        Returns
-        -------
-        None
-        """
-        code = utils.concatenate_modules(path)
-        if not code:
-            return
-        response_code = self.run_inference(code)
-        module_code_dict = utils.parse_response(
-            response_code, self.start_phrase, self.end_phrase
-        )
-        utils.write_response(module_code_dict, path)
 
     def _create_prompt(self) -> str:
         """Create the developer prompt using the provided template."""

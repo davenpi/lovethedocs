@@ -4,6 +4,8 @@ A place to note improvements and challenges as they come up. Most recent at the 
 
 ## Improvements
 
+- TODO: Write system prompt to be much more closely aligned with PEP.
+- Tested all methods so far. Keep this bar.
 - Encapsulated
 - Using gpt-4.1 makes this much better. It follows instructions better on formatting.
 - Can edit a directory of code.
