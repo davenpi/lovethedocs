@@ -50,7 +50,7 @@ project, but I don't know how to start there.
 
 ### Install
 
-`pip install fixthedocs`
+`pip install lovethedocs`
 
 ### Optionally configure behavior
 
@@ -59,7 +59,7 @@ itself.
 
 ### Run
 
-`fixthedocs .`
+`lovethedocs .`
 
 ### Result
 

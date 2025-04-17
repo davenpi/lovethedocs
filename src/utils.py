@@ -14,6 +14,8 @@ END_PHRASE = "END lovethedocs"
 
 IGNORED_DIRS = {"venv", ".git", "__pycache__", "_improved", ".pytest_cache", ".vscode"}
 
+# TODO: Maybe add an extra output that summarizes current style and suggests
+# improvements. Or even has the refactored code. Lots of room for exploration here.
 DEV_PROMPT = f"""Your job is to be a benevolent documentation assistant. You are
 a master of docstrings and of understanding python code. You've spent a long time
 developing your taste. You are now going to help a user improve the
@@ -46,7 +48,8 @@ docstring should be clear and easy to read. Avoid repeating unnecessary informat
 that is obvious from the code. If a function or class has a quality docstring already,
 do not change it. Quality means the docstring explains what the associated code does
 clearly and follows the `pandas`/`numpy`/`requests` style. Do make sure to highlight
-where there are unused variables, imports, or other obvious code smells.
+where there are unused variables, imports, or other obvious code smells. Do this by
+adding a comment next to unused imports, for example.
 
 You'll be passed a python module or series of modules. They will be formatted as
 follows:
@@ -215,38 +218,38 @@ def parse_response(response: str) -> dict:
 
     Returns
     -------
-    dict
+    module_code_dict : dict
         A dictionary mapping module names to updated code. For example::
 
             {
-                "module1": "def foo():\n    pass\n",
-                "module2": "def bar():\n    pass\n"
+                "module1.py": "def foo():\n    pass\n",
+                "module2.py": "def bar():\n    pass\n"
             }
     """
-    modules = {}
+    module_code_dict = {}
     for line in response.splitlines():
         if line.startswith(START_PHRASE):
             # TODO: get module name without hardcoding position
             module = line.split()[2]
-            print(f"PARSING MODULE: {module}")
-
-            modules[module] = ""
+            module_code_dict[module] = ""
         elif line.startswith(END_PHRASE):
             continue
         else:
-            modules[module] += line + "\n"
+            module_code_dict[module] += line + "\n"
 
-    print(f"MODULE KEYS: {modules.keys()}")
-    return modules
+    # strip formatting from the code
+    for module in module_code_dict:
+        module_code_dict[module] = strip_format(module_code_dict[module])
+    return module_code_dict
 
 
-def write_response(modules: dict, path: str | Path) -> None:
+def write_response(module_code_dict: dict, path: str | Path) -> None:
     """
     Write the response to a file.
 
     Parameters
     ----------
-    modules : dict
+    module_code_dict : dict
         A dictionary with the module name as the key and the updated code as the value.
     path : str | Path
         The path to the directory where the files will be saved.
@@ -257,17 +260,14 @@ def write_response(modules: dict, path: str | Path) -> None:
     """
     improved_path = Path(path) / "_improved"
     improved_path.mkdir(parents=True, exist_ok=True)
-    for module, code in modules.items():
+    for module, code in module_code_dict.items():
         if module:  # handle empty module names
             with (improved_path / module).open("w") as f:
-                # Strip formatting from the code
-                code = strip_format(code)
-                # Write the code to the file
                 f.write(code)
             print(f"Updated '{module}' with new docstrings at {improved_path / module}")
 
 
-def iter_project_dirs(base: Path, ignored: set[str] = IGNORED_DIRS) -> Iterable[Path]:
+def _iter_project_dirs(base: Path, ignored: set[str] = IGNORED_DIRS) -> Iterable[Path]:
     """
     Recursively yield directories in base that are not in the ignored set.
     """
@@ -276,7 +276,7 @@ def iter_project_dirs(base: Path, ignored: set[str] = IGNORED_DIRS) -> Iterable[
             if path.name in ignored:
                 continue
             yield path
-            yield from iter_project_dirs(path, ignored)
+            yield from _iter_project_dirs(path, ignored)
 
 
 def edit_all_dirs(client: OpenAI, path: str) -> None:
@@ -292,12 +292,11 @@ def edit_all_dirs(client: OpenAI, path: str) -> None:
     write_response(module_code_dict, base)
 
     # Handle subdirectories
-    for subdir in iter_project_dirs(base):
+    for subdir in _iter_project_dirs(base):
         code = concatenate_modules(subdir)
         if not code:
             continue
         response_code = run_inference(client, code)
-        print(f"RESPONSE CODE: {response_code}")
         module_code_dict = parse_response(response_code)
         write_response(module_code_dict, subdir)
 
@@ -319,11 +318,12 @@ def run_inference(client: OpenAI, content: str) -> str:
         The response from OpenAI.
     """
     response = client.responses.create(
-        model="gpt-4.1-2025-04-14",
-        # model="gpt-4o-mini",
+        # model="gpt-4.1-2025-04-14",
+        model="gpt-4o-mini",
         instructions=DEV_PROMPT,
         input=[{"role": "user", "content": content}],
         temperature=0,
     )
-    print(f"RESPONSE ON NEXT LINE:\n{response.output[0].content[0].text}")
-    return response.output[0].content[0].text
+    model_text_output = response.output[0].content[0].text
+    print(f"RESPONSE ON NEXT LINE:\n{model_text_output}")
+    return model_text_output

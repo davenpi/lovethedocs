@@ -1,6 +1,5 @@
 """
-This modules analysize a file and generates the same code with improved documentation.
-For now we will follow the docstring style of Kenneth Reitz/pandas.
+Main script to run `lovethedocs` on a given directory.
 """
 
 import argparse
