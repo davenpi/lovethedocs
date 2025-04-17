@@ -23,10 +23,19 @@ class TestStripFormat:
             "```python\n"
             + 'print("Hello, world!")\n'
             + 'print("Goodbye, world!")\n'
+            + "def foo():\n"
+            + '    print("Hello, world!")\n'
             + "```"
         )
         stripped = utils.strip_format(text)
-        expected = 'print("Hello, world!")' + "\n" + 'print("Goodbye, world!")'
+        expected = (
+            'print("Hello, world!")'
+            + "\n"
+            + 'print("Goodbye, world!")'
+            + "\n"
+            + "def foo():\n"
+            + '    print("Hello, world!")'
+        )
         assert stripped == expected
 
 
@@ -49,10 +58,12 @@ class TestLoadModules:
             # Create some dummy Python files
             (temp_path / "module1.py").write_text("print('module1')")
             (temp_path / "module2.py").write_text("print('module2')")
+            (temp_path / "__init__.py").write_text("print('init')")
+            (temp_path / "__main__.py").write_text("print('main')")
             (temp_path / "module3.txt").write_text("Not a Python file")
 
             python_modules = utils.load_modules(str(temp_path))
-            expected_modules = ["module1", "module2"]
+            expected_modules = ["module1.py", "module2.py"]
 
             assert python_modules == expected_modules
 
@@ -85,9 +96,9 @@ class TestConcatenateModules:
 
             concatenated_code = utils.concatenate_modules(str(temp_path))
             expected_code = (
-                "\nBEGIN module1\n"
+                "\nBEGIN module1.py\n"
                 + "print('module1')\nEND module1.py\n"
-                + "\nBEGIN module2\n"
+                + "\nBEGIN module2.py\n"
                 + "print('module2')\nEND module2.py\n"
             )
 
@@ -107,10 +118,10 @@ class TestParseResponse:
             + f"{utils.END_PHRASE} module1.py\n"
         )
         parsed = utils.parse_response(response)
-        print(f"Parsed response: {parsed['module1']}")
+        print(f"Parsed response: {parsed['module1.py']}")
         expected_code = "```python\n" + 'print("Hello, world!")\n' + "```\n"
         print(f"Expected code: {expected_code}")
-        expected_dict = {"module1": expected_code}
+        expected_dict = {"module1.py": expected_code}
         assert parsed == expected_dict
 
     def test_parse_multiple_responses(self):
@@ -131,7 +142,7 @@ class TestParseResponse:
         expected_code1 = "```python\n" + 'print("Hello, world!")\n' + "```\n"
         expected_code2 = "```python\n" + 'print("Goodbye, world!")\n' + "```\n"
         expected_dict = {
-            "module1": expected_code1,
-            "module2": expected_code2,
+            "module1.py": expected_code1,
+            "module2.py": expected_code2,
         }
         assert parsed == expected_dict
