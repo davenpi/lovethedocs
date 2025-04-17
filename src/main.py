@@ -3,34 +3,43 @@ Main script to run `lovethedocs` on a given directory.
 """
 
 import argparse
-import sys
+from dotenv import dotenv_values
+from pathlib import Path
 
 from openai import OpenAI
-from utils import (
-    API_KEY,
-    edit_all_dirs,
-)
 
-# set up OpenAI client
-client = OpenAI(api_key=API_KEY)
+from editor import CodeEditor
+import utils
 
-# get the file we want to analyze
+
+def edit_all_dirs(editor: CodeEditor, path: str | Path) -> None:
+    base = Path(path)
+    editor.process_directory(base)
+    for subdir in utils._iter_project_dirs(base):
+        editor.process_directory(subdir)
+
+
+config = dotenv_values(".env")
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "-p",
     "--path",
     type=str,
+    required=True,
     help="Path to the directory containing the files to be analyzed.",
 )
-
 args = parser.parse_args()
-
 path = args.path
-if args.path is None:
-    print("Please provide a path to the directory containing the files to be analyzed.")
-    sys.exit(1)
 
-# edit the code in the given path and all its subdirectories
-edit_all_dirs(client, path)
+
+client = OpenAI(api_key=config["OPENAI_API_KEY"])
+editor = CodeEditor(
+    client=client,
+    model="gpt-4.1",
+    start_phrase="BEGIN lovethedocs",
+    end_phrase="END lovethedocs",
+)
+edit_all_dirs(editor, path)
 
 print("Done!")
