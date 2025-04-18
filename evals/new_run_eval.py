@@ -46,7 +46,7 @@ eval_config = EvalConfig(
 )
 
 # --- Step 2: Upload the dataset file ---
-dataset_path = Path("evals/data/formatting_discretion.jsonl")
+dataset_path = Path("evals/data/gen_formatting_discretion.jsonl")
 with open(dataset_path, "rb") as f:
     file = client.files.create(file=f, purpose="evals")
 file_id = file.id

@@ -109,7 +109,7 @@ def concatenate_modules(path: str | Path) -> str:
             code += f.read().strip()  # remove leading/trailing whitespace
         code += f"\n{DEFAULT_END_PHRASE}" + f" {module}\n"
     print(f"Concatenated {modules} into a single string.")
-    return code
+    return code.strip()  # remove leading/trailing whitespace
 
 
 def parse_response(response: str, start_phrase: str, end_phrase: str) -> dict:

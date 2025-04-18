@@ -114,10 +114,10 @@ class TestConcatenateModules:
 
             concatenated_code = utils.concatenate_modules(temp_path)
             expected_code = (
-                f"\n{DEFAULT_START_PHRASE} module1.py\n"
+                f"{DEFAULT_START_PHRASE} module1.py\n"
                 + f"print('module1')\n{DEFAULT_END_PHRASE} module1.py\n"
                 + f"\n{DEFAULT_START_PHRASE} module2.py\n"
-                + f"print('module2')\n{DEFAULT_END_PHRASE} module2.py\n"
+                + f"print('module2')\n{DEFAULT_END_PHRASE} module2.py"
             )
 
             assert concatenated_code == expected_code
