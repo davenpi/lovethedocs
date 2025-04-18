@@ -8,7 +8,7 @@ It's hard to understand how to use a new piece of software. It's often made
 unecessarily complex by out of date or incomplete documentation. Eventually, with
 persistence, we figure out how a project works by reading the source, looking through
 GitHub issues, or developing enough understanding to realize that the authors just
-haven't shown the documentation love in a while.
+haven't reviewed the documentation in a while.
 
 There are 27 million software developers in the world. Let's say that in a year
 each of them spends a single hour in an unnecessary state of confusion because of
