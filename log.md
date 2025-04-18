@@ -2,9 +2,21 @@
 
 A place to note improvements and challenges as they come up. Most recent at the top.
 
-## Improvements
+## Extensions
 
+- TODO: Set it up so that the model first reads the code and _only_ returns new code
+  if the docs needed work. Saves tokens and is easier to deal with.
+- TODO: Prompt to ensure that examples given actually match the code usage
+- Go through docs and find all broken links
+- TODO: Try rewriting the developer prompt in a rubric style
+- TODO: Automated model output evaluations.
+- TODO: Usage will be much smoother if there is an interactive way to deal with the
+  resulting diffs. Found this by running the system on this source code.
 - TODO: Write system prompt to be much more closely aligned with PEP.
+
+## Improvements made
+
+- First eval written!
 - Tested all methods so far. Keep this bar.
 - Encapsulated
 - Using gpt-4.1 makes this much better. It follows instructions better on formatting.

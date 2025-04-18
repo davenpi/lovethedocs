@@ -101,7 +101,7 @@ def concatenate_modules(path: str | Path) -> str:
         code += "\nBEGIN" + f" {module}\n"
         file_path = Path(path) / f"{module}"
         with file_path.open("r") as f:
-            code += f.read()
+            code += f.read().strip()  # remove leading/trailing whitespace
         code += "\nEND" + f" {module}\n"
     print(f"Concatenated {modules} into a single string.")
     return code

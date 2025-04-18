@@ -1,0 +1,1 @@
+{"item": {"input_code": "def hello():\n    \"\"\"Print 'Hello, world!'.\"\"\"\n    print(\"Hello, world!\")", "expected_output": "BEGIN lovethedocs hello.py\n```python\ndef hello():\n    \"\"\"Print 'Hello, world!'.\"\"\"\n    print(\"Hello, world!\")\n```\nEND lovethedocs hello.py"}}

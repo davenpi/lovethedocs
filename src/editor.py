@@ -51,6 +51,7 @@ class CodeEditor:
         """
         code = utils.concatenate_modules(path)
         if not code:
+            print(f"No Python modules found in {path}.")
             return
         response_code = self._run_inference(code)
         module_code_dict = utils.parse_response(

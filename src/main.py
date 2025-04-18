@@ -50,7 +50,7 @@ path = args.path
 client = OpenAI(api_key=config["OPENAI_API_KEY"])
 editor = CodeEditor(
     client=client,
-    model="gpt-4o-mini",
+    model="gpt-4.1",
 )
 edit_all_dirs(editor, path)
 
