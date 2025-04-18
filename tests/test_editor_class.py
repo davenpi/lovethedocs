@@ -12,8 +12,6 @@ from src.editor import CodeEditor
 
 
 class TestCodeEditor:
-    start_phrase = "BEGIN lovethedocs"
-    end_phrase = "END lovethedocs"
 
     @pytest.fixture
     def temp_project(self):

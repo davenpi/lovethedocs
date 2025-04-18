@@ -77,13 +77,13 @@ def concatenate_modules(path: str | Path) -> str:
 
     The string is formatted as follows:
 
-        {DEFAULT_START_PHRASE} <module1_name>
+        DEFAULT_START_PHRASE <module1_name>
         <module code>
-        {DEFUALT_END_PHRASE} <module1_name>.py
+        DEFUALT_END_PHRASE <module1_name>.py
 
-        {DEFAULT_START_PHRASE} <module2_name>.py
+        DEFAULT_START_PHRASE <module2_name>.py
         <module code>
-        {DEFAULT_END_PHRASE} <module2_name>
+        DEFAULT_END_PHRASE <module2_name>
         ...
 
     This is done to have a standard format for passing the modules to the model.

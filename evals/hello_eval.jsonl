@@ -1,1 +1,0 @@
-{"item": {"input_content": "BEGIN hello.py\nprint(\"Hello, world!\")\nEND hello.py", "expected_output": "BEGIN lovethedocs hello.py\n```python\nprint(\"Hello, world!\")\n```\nEND lovethedocs hello.py"}}
