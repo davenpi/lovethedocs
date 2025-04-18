@@ -2,6 +2,10 @@ from pathlib import Path
 import tempfile
 
 import src.utils as utils
+from src.contracts import (
+    DEFAULT_START_PHRASE,
+    DEFAULT_END_PHRASE,
+)
 
 
 class TestStripFormat:
@@ -110,10 +114,10 @@ class TestConcatenateModules:
 
             concatenated_code = utils.concatenate_modules(temp_path)
             expected_code = (
-                "\nBEGIN module1.py\n"
-                + "print('module1')\nEND module1.py\n"
-                + "\nBEGIN module2.py\n"
-                + "print('module2')\nEND module2.py\n"
+                f"\n{DEFAULT_START_PHRASE} module1.py\n"
+                + f"print('module1')\n{DEFAULT_END_PHRASE} module1.py\n"
+                + f"\n{DEFAULT_START_PHRASE} module2.py\n"
+                + f"print('module2')\n{DEFAULT_END_PHRASE} module2.py\n"
             )
 
             assert concatenated_code == expected_code
@@ -151,19 +155,18 @@ class TestIterProjectDirs:
 class TestParseResponse:
     """Test the parse_response function"""
 
-    START_PHRASE = "BEGIN lovethedocs"
-    END_PHRASE = "END lovethedocs"
-
     def test_parse_single_response(self):
         """Test the parse_response function"""
         response = (
-            f"{self.START_PHRASE} module1.py\n"
+            f"{DEFAULT_START_PHRASE} module1.py\n"
             + "```python\n"
             + 'print("Hello, world!")\n'
             + "```\n"
-            + f"{self.END_PHRASE} module1.py\n"
+            + f"{DEFAULT_END_PHRASE} module1.py\n"
         )
-        parsed = utils.parse_response(response, self.START_PHRASE, self.END_PHRASE)
+        parsed = utils.parse_response(
+            response, DEFAULT_START_PHRASE, DEFAULT_END_PHRASE
+        )
         expected_code = 'print("Hello, world!")'
         expected_dict = {"module1.py": expected_code}
         assert parsed == expected_dict
@@ -171,18 +174,20 @@ class TestParseResponse:
     def test_parse_multiple_responses(self):
         """Test the parse_response function with multiple responses"""
         response = (
-            f"{self.START_PHRASE} module1.py\n"
+            f"{DEFAULT_START_PHRASE} module1.py\n"
             + "```python\n"
             + 'print("Hello, world!")\n'
             + "```\n"
-            + f"{self.END_PHRASE} module1.py\n"
-            + f"{self.START_PHRASE} module2.py\n"
+            + f"{DEFAULT_END_PHRASE} module1.py\n"
+            + f"{DEFAULT_START_PHRASE} module2.py\n"
             + "```python\n"
             + 'print("Goodbye, world!")\n'
             + "```\n"
-            + f"{self.END_PHRASE} module2.py\n"
+            + f"{DEFAULT_END_PHRASE} module2.py\n"
         )
-        parsed = utils.parse_response(response, self.START_PHRASE, self.END_PHRASE)
+        parsed = utils.parse_response(
+            response, DEFAULT_START_PHRASE, DEFAULT_END_PHRASE
+        )
         expected_code1 = 'print("Hello, world!")'
         expected_code2 = 'print("Goodbye, world!")'
         expected_dict = {

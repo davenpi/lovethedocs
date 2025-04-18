@@ -4,6 +4,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from src.contracts import (
+    DEFAULT_START_PHRASE,
+    DEFAULT_END_PHRASE,
+)
 from src.editor import CodeEditor
 
 
@@ -26,17 +30,15 @@ class TestCodeEditor:
         mock_client = MagicMock()
         mock_response = MagicMock()
         mock_response.output[0].content[0].text = (
-            f"{self.start_phrase} module1.py\n```python\ndef foo():\n    '''Doc'''\n    pass\n```\n"
-            f"{self.end_phrase} module1.py\n"
-            f"{self.start_phrase} module2.py\n```python\ndef bar():\n    '''Doc'''\n    pass\n```\n"
-            f"{self.end_phrase} module2.py\n"
+            f"{DEFAULT_START_PHRASE} module1.py\n```python\ndef foo():\n    '''Doc'''\n    pass\n```\n"
+            f"{DEFAULT_END_PHRASE} module1.py\n"
+            f"{DEFAULT_START_PHRASE} module2.py\n```python\ndef bar():\n    '''Doc'''\n    pass\n```\n"
+            f"{DEFAULT_END_PHRASE} module2.py\n"
         )
         mock_client.responses.create.return_value = mock_response
         return CodeEditor(
             client=mock_client,
             model="gpt-4o",
-            start_phrase=self.start_phrase,
-            end_phrase=self.end_phrase,
         )
 
     def test_process_directory_creates_improved_files(self, temp_project, mock_editor):

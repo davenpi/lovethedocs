@@ -1,6 +1,11 @@
 from pathlib import Path
 from typing import Iterable
 
+from src.contracts import (
+    DEFAULT_START_PHRASE,
+    DEFAULT_END_PHRASE,
+)
+
 IGNORED_DIRS = {"venv", ".git", "__pycache__", "_improved", ".pytest_cache", ".vscode"}
 
 
@@ -72,13 +77,13 @@ def concatenate_modules(path: str | Path) -> str:
 
     The string is formatted as follows:
 
-        BEGIN <module1_name>
+        {DEFAULT_START_PHRASE} <module1_name>
         <module code>
-        END <module1_name>.py
+        {DEFUALT_END_PHRASE} <module1_name>.py
 
-        BEGIN <module2_name>.py
+        {DEFAULT_START_PHRASE} <module2_name>.py
         <module code>
-        END <module2_name>
+        {DEFAULT_END_PHRASE} <module2_name>
         ...
 
     This is done to have a standard format for passing the modules to the model.
@@ -98,11 +103,11 @@ def concatenate_modules(path: str | Path) -> str:
         return ""
     code = ""
     for module in modules:
-        code += "\nBEGIN" + f" {module}\n"
+        code += f"\n{DEFAULT_START_PHRASE}" + f" {module}\n"
         file_path = Path(path) / f"{module}"
         with file_path.open("r") as f:
             code += f.read().strip()  # remove leading/trailing whitespace
-        code += "\nEND" + f" {module}\n"
+        code += f"\n{DEFAULT_END_PHRASE}" + f" {module}\n"
     print(f"Concatenated {modules} into a single string.")
     return code
 
