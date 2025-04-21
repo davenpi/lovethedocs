@@ -6,8 +6,11 @@ import json
 from typing import Any
 
 from openai import OpenAI
+from dotenv import dotenv_values
 
 from .schema_loader import _RAW_SCHEMA
+
+config = dotenv_values(".env")
 
 _DEV_PROMPT = """You are a documentation assistant. You're a master at this stuff.
 You've put in the time and have the experience to know what good documentation looks
@@ -44,13 +47,11 @@ it easier for developers to understand the codebase and its purpose.
 Enjoy!
 """
 
-from dotenv import dotenv_values
 
-config = dotenv_values(".env")
+client = OpenAI(api_key=config["OPENAI_API_KEY"])
 
 
 def request(source_prompt: str, *, model: str = "gpt-4.1") -> dict[str, Any]:
-    client = OpenAI(api_key=config["OPENAI_API_KEY"])
     response = client.responses.create(
         model=model,
         instructions=_DEV_PROMPT,

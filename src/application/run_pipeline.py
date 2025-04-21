@@ -2,6 +2,7 @@
 High-level orchestration. Glue code only.
 """
 
+import timeit
 import json
 from pathlib import Path
 from typing import Sequence
@@ -24,19 +25,18 @@ def run_pipeline(paths: Sequence[str], settings: config.Settings = config.Settin
         prompt = build_prompt.build_prompt(source_blob)
         tokens = len(encoding.encode(prompt))
         print(f"Prompt tokens: {tokens}")
-        if tokens > 4096:
-            print(f"Prompt too long: {tokens} tokens")
-            raise ValueError(
-                f"Prompt too long: {tokens} tokens. "
-                "Please reduce the size of the input files."
-            )
 
+        # time the model call
+        start = timeit.default_timer()
         raw_json = openai_client.request(prompt, model=settings.model_name)
+        elapsed = timeit.default_timer() - start
+        print(f"Model call took {elapsed:.2f} seconds")
         validator.validate(raw_json)  # fail fast
         for mod in raw_json["modules"]:
             if not mod.get("qualname"):
                 rel = Path(mod["path"]).with_suffix("")  # remove .py
                 mod["qualname"] = str(rel).replace("/", ".")  # foo/bar → foo.bar
+
         (base / "_improved").mkdir(exist_ok=True)
         (raw_json_path := base / "_improved" / "raw_response.json").write_text(
             json.dumps(raw_json, indent=2)
