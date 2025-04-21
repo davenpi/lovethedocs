@@ -44,8 +44,6 @@ def write_files(edits: dict[str, str], base: Path) -> None:
     """
     target = base / "_improved"
     target.mkdir(exist_ok=True)
-    # for name, code in edits.items():
-    #     (target / name).write_text(code)
     target_root = base / "_improved"
     for rel_path_str, code in edits.items():
         wrapped_code = f'"""\n{code.rstrip()}\n"""'

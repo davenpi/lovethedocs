@@ -9,4 +9,4 @@ from dataclasses import dataclass
 @dataclass
 class ModuleEdit:
     path: str  # "src/foo.py"
-    updated_code: str  # full file contents with new docstrings
+    updated_code: str  # TODO: make more clear. Is this docstring or signature? Both?

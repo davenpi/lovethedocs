@@ -18,11 +18,11 @@ mind:
 • Mimic the project's dominant docstring style (Google vs NumPy). If there's no docs,
 use the NumPy style.
 • Do not modify code—*only* return updated docstrings/examples inside the supplied JSON
-schema.
+schema. Put a type hinted signature in your 'sigature' response key.
 • When a key is required by the schema but you have no content(e.g. no functions),
 output an empty list [] or empty string "".
 • Don't be wordy. Describe the code as it is, not how it should be. If you must,
-highlight the difference.
+highlight the difference between the code and the docstring.
 
 You'll get the input as a string of concatenated Python modules. It will look like this:
 

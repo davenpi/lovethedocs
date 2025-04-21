@@ -2,6 +2,7 @@
 from typing import Dict, List
 
 
+# TODO: Remove in phase-1. Temporary code for getting docstrings.
 def _collect_docstrings(obj_list: List[dict]) -> List[str]:
     """Return all docstrings found in a list of function/method objects."""
     out: List[str] = []
@@ -11,7 +12,9 @@ def _collect_docstrings(obj_list: List[dict]) -> List[str]:
     return out
 
 
-def flatten(json_payload: dict) -> Dict[str, str]:
+# TODO: Clean up. Temporary code for converting raw response
+# right now this is coupled to the schema. Weird.
+def flatten(json_payload: dict) -> dict[str, str]:
     """
     Convert a validated `code_documentation_edits` payload into
     { "pkg/module.py": "<placeholder updated source>", ... }.

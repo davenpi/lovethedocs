@@ -35,7 +35,6 @@
         "properties": {
           "name":      { "type": "string" },    
           "qualname":  { "type": "string" },   
-          "lineno":    { "type": "integer" },  
           "edit_type": { "enum": ["docstring", "examples", "signature"] },
           "docstring": { "type": "string" },
           "signature": { "type": "string" },
@@ -44,7 +43,7 @@
             "items": { "type": "string" }
           }
         },
-        "required": ["name", "qualname", "lineno", "edit_type", "docstring", "signature", "examples"],
+        "required": ["name", "qualname", "edit_type", "docstring", "signature", "examples"],
         "additionalProperties": false
       },
   
@@ -53,14 +52,13 @@
         "properties": {
           "name":     { "type": "string" },           
           "qualname": { "type": "string" },         
-          "lineno":   { "type": "integer" },
           "docstring":{ "type": "string" },
           "methods": {
             "type": "array",
             "items": { "$ref": "#/$defs/function" }
           }
         },
-        "required": ["name", "qualname", "methods", "docstring", "lineno"],
+        "required": ["name", "qualname", "methods", "docstring"],
         "additionalProperties": false
       }
     }
