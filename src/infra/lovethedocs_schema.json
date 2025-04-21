@@ -1,0 +1,67 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "code_documentation_edits",
+    "type": "object",
+    "properties": {
+      "modules": {
+        "type": "array",
+        "items": { "$ref": "#/$defs/module" }
+      }
+    },
+    "required": ["modules"],
+    "additionalProperties": false,
+  
+    "$defs": {
+      "module": {
+        "type": "object",
+        "properties": {
+          "path":   { "type": "string" },       
+          "qualname": { "type": "string" },     
+          "functions": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/function" }
+          },
+          "classes": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/class" }
+          }
+        },
+        "required": ["path", "qualname", "functions", "classes"],
+        "additionalProperties": false
+      },
+  
+      "function": {
+        "type": "object",
+        "properties": {
+          "name":      { "type": "string" },    
+          "qualname":  { "type": "string" },   
+          "lineno":    { "type": "integer" },  
+          "edit_type": { "enum": ["docstring", "examples", "signature"] },
+          "docstring": { "type": "string" },
+          "signature": { "type": "string" },
+          "examples":  {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "required": ["name", "qualname", "lineno", "edit_type", "docstring", "signature", "examples"],
+        "additionalProperties": false
+      },
+  
+      "class": {
+        "type": "object",
+        "properties": {
+          "name":     { "type": "string" },           
+          "qualname": { "type": "string" },         
+          "lineno":   { "type": "integer" },
+          "docstring":{ "type": "string" },
+          "methods": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/function" }
+          }
+        },
+        "required": ["name", "qualname", "methods", "docstring", "lineno"],
+        "additionalProperties": false
+      }
+    }
+  }
