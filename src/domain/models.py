@@ -10,15 +10,15 @@ class ObjectEdit:
 
     Attributes
     ----------
-    qualname : str
-        The qualified name of the object to be edited (e.g., "MyClass.__init__").
+    id : str
+        The id of the object to be edited in the AST.
     docstring : Optional[str]
         The new docstring for the object. If None, the docstring will be left unchanged.
     signature : Optional[str]
         The new signature for the object. If None, the signature will be left unchanged.
     """
 
-    qualname: str  # e.g. "MyClass.__init__"  or  "helper"
+    id: str  # e.g. ID001
     docstring: Optional[str] = None  # None → leave unchanged
     signature: Optional[str] = None  # canonical string, e.g. "(x: int) -> str"
 

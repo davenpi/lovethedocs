@@ -1,0 +1,9 @@
+import libcst as cst
+
+from src.domain.models import ObjectEdit
+
+
+class DocSigPatcher(cst.CSTTransformer):
+    def __init__(self, id_to_edit: dict[str, ObjectEdit]): ...
+    def visit_FunctionDef(self, node): ...
+    def visit_ClassDef(self, node): ...

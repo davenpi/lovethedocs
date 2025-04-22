@@ -1,4 +1,4 @@
-# Love the docs
+# lovethedocs
 
 ## Why?
 
