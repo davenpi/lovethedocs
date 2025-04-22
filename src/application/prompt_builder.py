@@ -9,16 +9,13 @@ class ObjCollector(cst.CSTVisitor):
 
     def __init__(self):
         self.stack = []  # keeps current qualname parts
-        self.result = []  # [(id, qualname)]
-        self._counter = 1
+        self.qualnames = []
 
     def _push(self, name: str):
         self.stack.append(name)
         qualname = ".".join(self.stack)
-        obj_id = f"ID{self._counter:03d}"
-        self._counter += 1
-        self.result.append((obj_id, qualname))
-        return obj_id
+        self.qualnames.append(qualname)
+        return
 
     # ---- nodes ----
     def visit_FunctionDef(self, node):
@@ -44,8 +41,8 @@ def build_prompts(
     produced by `infra.file_system.load_modules()`. Each prompt looks like::
 
         ### Objects in this file:
-        ID001 qualname1
-        ID002 qualname2
+        qualname1
+        qualname2
         ...
 
         BEGIN <relative_path>
@@ -68,23 +65,17 @@ def build_prompts(
             A dictionary where the keys are the module names and the values are
               dictionaries mapping object IDs to their qualified names.
     """
-    prompts, id_maps = {}, {}
+    prompts = {}
     for path, source in modules.items():
         tree = cst.parse_module(source)
         wrapper = cst.metadata.MetadataWrapper(tree)
         collector = ObjCollector()
         wrapper.visit(collector)
 
-        id_to_qn = dict(collector.result)
-        id_maps[path] = id_to_qn
-
         header = (
             "### Objects in this file:\n"
-            + "\n".join(f"  {obj_id:<6} {qn}" for obj_id, qn in collector.result)
+            + "\n".join(f"  {qn}" for qn in collector.qualnames)
             + "\n\n"
         )
-
-        prompts[path] = (
-            header + f"BEGIN {path}\n" + source.rstrip() + "\n" + f"END {path}"
-        )
-    return prompts, id_maps
+        prompts[path] = header + f"BEGIN {path}\n{source.strip()}\nEND {path}"
+    return prompts

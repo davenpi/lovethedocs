@@ -21,28 +21,26 @@ mind:
 • Mimic the project's dominant docstring style (Google vs NumPy). If there's no docs,
 use the NumPy style.
 • Do not modify code—*only* return updated docstrings/examples inside the supplied JSON
-schema. Put a type hinted signature in your 'sigature' response key.
-• When a key is required by the schema but you have no content(e.g. no functions),
+schema. Put a type hinted signature in your 'signature' response key.
+• When a key is required by the schema but you have no content (e.g. no functions),
 output an empty list [] or empty string "".
-• Don't be wordy. Describe the code as it is, not how it should be. If you must,
-highlight the difference between the code and the docstring.
+• If you see a docstring that is already in the right format, leave it alone.
+• Try to respect the 88 character line length limit.
+• Just respond with strings. Don't try to format the docstrings with triple quotes or
+    indentation. Just return the string content.
 
-You'll get the input as a string of concatenated Python modules. It will look like this:
+You'll get a python module alongside the qualified names of the objects inside it.
+It will look like this:
 
-    BEGIN module.py
-    <code>
-    END module.py
+        ### Objects in this file:
+        qualname1
+        qualname2
+        ...
 
-    BEGIN module2.py
-    <code>
-    END module2.py
+        BEGIN <relative_path>
+        <source code unchanged>
+        END <relative_path>
 
-    BEGIN subdir/module.py
-    <code>
-    END subdir/module.py
-
-Our goal here is to reduce the cognitive load of reading code. We want to make
-it easier for developers to understand the codebase and its purpose.
 
 Enjoy!
 """
@@ -69,4 +67,6 @@ def request(source_prompt: str, *, model: str = "gpt-4.1") -> dict[str, Any]:
         temperature=0,
     )
     print("Model responded!")
-    return json.loads(response.output_text)
+    response_json = json.loads(response.output_text)
+    print("Response JSON:", response_json)
+    return response_json

@@ -69,3 +69,31 @@ def write_files(edits: dict[str, str], base: Path) -> None:
         dest_path = target_root / rel_path
         dest_path.parent.mkdir(parents=True, exist_ok=True)
         dest_path.write_text(wrapped_code)
+
+
+def write_file(path: str | Path, code: str, root: Path | None = None) -> None:
+    """
+    Write *code* to disk, mirroring the original directory structure
+    under an ``_improved`` folder.
+
+    Parameters
+    ----------
+    path : str | Path
+        The source file’s **relative** path (e.g. ``"pkg/foo.py"``) or an
+        absolute path.  If absolute, only its tail after *root* is preserved.
+    code : str
+        The code to write.
+    root : Path | None, default None
+        The project root that was handed to ``load_modules``.  If omitted,
+        ``Path.cwd()`` is used, so running the pipeline from anywhere still
+        writes files under ``./_improved``.
+    """
+    path = Path(path)
+    base = Path(root) if root else Path.cwd()
+
+    # Always write under <base>/_improved/<original path>
+    dest = base / Path("_improved") / path
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    # Ensure a single trailing newline; many tools expect it
+    dest.write_text(code.rstrip() + "\n", encoding="utf-8")
