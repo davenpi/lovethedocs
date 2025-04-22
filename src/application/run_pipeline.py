@@ -6,11 +6,12 @@ import timeit
 import json
 from pathlib import Path
 from typing import Sequence
+import sys
 
 import tiktoken
 
 from src.infra import file_system, openai_client, schema_loader
-from . import build_prompt, config
+from . import config, prompt_builder
 from src.domain import bundle_ops
 
 encoding = tiktoken.encoding_for_model("gpt-4o")
@@ -21,27 +22,24 @@ def run_pipeline(paths: Sequence[str], settings: config.Settings = config.Settin
 
     for raw_path in paths:
         base = Path(raw_path)
-        source_blob = file_system.concatenate_modules(base)
-        prompt = build_prompt.build_prompt(source_blob)
-        tokens = len(encoding.encode(prompt))
-        print(f"Prompt tokens: {tokens}")
+        modules = file_system.load_modules(base)
+        prompts = prompt_builder.build_prompts(modules)
+        for rel_path, prompt in prompts.items():
 
-        # time the model call
-        start = timeit.default_timer()
-        raw_json = openai_client.request(prompt, model=settings.model_name)
-        elapsed = timeit.default_timer() - start
-        print(f"Model call took {elapsed:.2f} seconds")
-        validator.validate(raw_json)  # fail fast
-        for mod in raw_json["modules"]:
-            if not mod.get("qualname"):
-                rel = Path(mod["path"]).with_suffix("")  # remove .py
-                mod["qualname"] = str(rel).replace("/", ".")  # foo/bar → foo.bar
+            tokens = len(encoding.encode(prompt))
+            print(f"Prompt tokens for {rel_path}: {tokens}")
+            # time the model call
+            start = timeit.default_timer()
+            raw_json = openai_client.request(prompt, model=settings.model_name)
+            elapsed = timeit.default_timer() - start
+            print(f"Model call took {elapsed:.2f} seconds")
+            validator.validate(raw_json)  # fail fast
 
-        (base / "_improved").mkdir(exist_ok=True)
-        (raw_json_path := base / "_improved" / "raw_response.json").write_text(
-            json.dumps(raw_json, indent=2)
-        )
-        print(f"Saved model response to {raw_json_path}")
+            (base / "_improved").mkdir(exist_ok=True)
+            (raw_json_path := base / "_improved" / "raw_response.json").write_text(
+                json.dumps(raw_json, indent=2)
+            )
+            print(f"Saved model response to {raw_json_path}")
 
         # Phase‑0 adapter: expect {"module.py": "<code>", ...}
         edited_files = bundle_ops.flatten(raw_json)  # << was raw_json

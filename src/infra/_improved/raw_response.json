@@ -1,0 +1,9 @@
+{
+  "modules": [
+    {
+      "path": "schema_loader.py",
+      "functions": [],
+      "classes": []
+    }
+  ]
+}

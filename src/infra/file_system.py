@@ -7,25 +7,43 @@ from pathlib import Path
 IGNORED_DIRS = {"venv", ".git", "__pycache__", ".pytest_cache", ".vscode"}
 
 
-def concatenate_modules(path: Path) -> str:
+def load_modules(path: Path) -> dict[str, str]:
     """
-    Legacy helper: returns one big string with BEGIN/END markers.
-    Will be replaced by an AST-based extractor in a later phase.
-    """
+    Load all python modules in a given path, return dict with path-code pairs.
 
-    code_blocks: list[str] = []
-    # Walk the project tree recursively, but ignore virtual‑envs and misc build dirs.
+
+    For example::
+
+        path = Path("src/infra")
+        load_modules(path)
+        ⇒ {
+            "src/infra/file_system.py": "source code...",
+            "src/infra/openai_client.py": "source code...",
+            ...
+        }
+
+    Parameters
+    ----------
+    path : Path
+        The path to the directory containing the Python modules.
+
+    Returns
+    -------
+    dict[str, str]
+        A dictionary where the keys are the relative paths of the Python modules
+        and the values are their corresponding code as strings.
+    """
+    modules: dict[str, str] = {}
     for file in path.rglob("*.py"):
-        # Skip files that live inside ignored directories
         if any(part in IGNORED_DIRS for part in file.parts):
             continue
         if file.name in ("__init__.py", "__main__.py"):
             continue
 
-        code = file.read_text().strip()
+        code = file.read_text()
         relative_path = file.relative_to(path).as_posix()  # e.g. "pkg/utils/math.py"
-        code_blocks.append(f"BEGIN {relative_path}\n{code}\nEND {relative_path}\n")
-    return "\n".join(code_blocks).strip()
+        modules[relative_path] = code
+    return modules
 
 
 def write_files(edits: dict[str, str], base: Path) -> None:
