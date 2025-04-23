@@ -35,7 +35,7 @@ def run_pipeline(paths: Sequence[str], settings: config.Settings = config.Settin
             module_edit = _create_module_edit_from_json(response_json)
             new_code = _write_new_code(modules, path, module_edit)
             print(f"New code for {path}: {new_code}")
-            # file_system.write_file(path, new_code, root=base)
+            file_system.write_file(path, new_code, root=base)
 
 
 def _create_module_edit_from_json(json_data):

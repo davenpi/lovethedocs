@@ -3,21 +3,23 @@ import libcst as cst
 from src.domain.models import ClassEdit, FunctionEdit
 
 
-def _make_docstring_stmt(body: str) -> cst.SimpleStatementLine:
-    """
-    Wrap *body* in triple quotes, ensure one real newline before the closing
-    quotes, and remove any leading indentation the model might have emitted.
-    """
-    clean = textwrap.dedent(body).rstrip()
+def _make_docstring_stmt(body: str, indent: str) -> cst.SimpleStatementLine:
+    """Return a CST node for a correctly formatted docstring."""
+    clean = body.strip("\n")
+    if "\n" in clean:  # multi-liner
+        indented = textwrap.indent(clean, indent)
+        literal = f'"""\n{indented}\n{indent}"""'
+    else:  # one-liner
+        literal = f'"""{clean}"""'
     return cst.SimpleStatementLine(
-        body=[cst.Expr(cst.SimpleString(f'"""{clean}\n"""'))],
-        leading_lines=[],  # no blank line above the docstring
+        body=[cst.Expr(cst.SimpleString(literal))],
+        leading_lines=[],
     )
 
 
 def _parse_header(header: str) -> cst.FunctionDef:
     """
-    Parse a stand‑alone 'def …:' header into a FunctionDef node from which we
+    Parse a stand-alone 'def …:' header into a FunctionDef node from which we
     can copy .params and .returns.  If the header ends with ':', we append
     'pass' so the snippet is valid Python for LibCST.
     """
@@ -43,9 +45,11 @@ class DocSigPatcher(cst.CSTTransformer):
     def _fqname(self) -> str:
         return ".".join(self._scope)
 
-    def _patch_doc(self, block: cst.IndentedBlock, text: str) -> cst.IndentedBlock:
+    def _patch_doc(
+        self, block: cst.IndentedBlock, text: str, indent_str: str
+    ) -> cst.IndentedBlock:
         """Replace first stmt with docstring or insert one if missing."""
-        doc_stmt = _make_docstring_stmt(text)
+        doc_stmt = _make_docstring_stmt(text, indent_str)
         body = list(block.body)
 
         if (
@@ -70,9 +74,12 @@ class DocSigPatcher(cst.CSTTransformer):
         self, original: cst.ClassDef, updated: cst.ClassDef
     ) -> cst.ClassDef:
         edit = self._edits.get(self._fqname())
+        # set indent string to 4 spaces for each scope level
+        indent_str = " " * (4 * len(self._scope))
+
         if isinstance(edit, ClassEdit) and edit.docstring:
             updated = updated.with_changes(
-                body=self._patch_doc(updated.body, edit.docstring)
+                body=self._patch_doc(updated.body, edit.docstring, indent_str)
             )
         self._scope.pop()
         return updated
@@ -85,11 +92,12 @@ class DocSigPatcher(cst.CSTTransformer):
         self, original: cst.FunctionDef, updated: cst.FunctionDef
     ) -> cst.FunctionDef:
         edit = self._edits.get(self._fqname())
+        indent_str = " " * (4 * len(self._scope))
         if isinstance(edit, FunctionEdit):
             # 1. Docstring
             if edit.docstring:
                 updated = updated.with_changes(
-                    body=self._patch_doc(updated.body, edit.docstring)
+                    body=self._patch_doc(updated.body, edit.docstring, indent_str)
                 )
 
             # 2. Signature

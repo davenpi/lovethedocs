@@ -21,7 +21,8 @@ mind:
 - Mimic the project's dominant docstring style (e.g., Google vs NumPy). If there are no
 docs, use the NumPy style.
 - Do not modify code—*only* return updated docstrings/examples inside the supplied JSON
-schema. Put a type hinted signature in your 'signature' response key.
+schema. Put a type hinted signature in your 'signature' response key. Make sure to
+include the ending colon.
 - When a key is required by the schema but you have no content (e.g. no functions),
 output an empty list [].
 - If you see a quality docstring, don't change it. Quality means the docstring both
