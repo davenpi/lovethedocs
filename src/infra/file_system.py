@@ -1,5 +1,5 @@
 """
-I/O helpers.  No business rules here.
+I/O helpers.
 """
 
 from pathlib import Path
@@ -11,14 +11,16 @@ def load_modules(path: Path) -> dict[str, str]:
     """
     Load all python modules in a given path, return dict with path-code pairs.
 
+    Also ignores directories that are in the `IGNORED_DIRS` set, and skips
+    `__init__.py` and `__main__.py` files.
 
     For example::
 
-        path = Path("src/infra")
+        path = Path("src/")
         load_modules(path)
         ⇒ {
-            "src/infra/file_system.py": "source code...",
-            "src/infra/openai_client.py": "source code...",
+            "src/hello.py": "source code...",
+            "src/main.py": "source code...",
             ...
         }
 
@@ -41,36 +43,12 @@ def load_modules(path: Path) -> dict[str, str]:
             continue
 
         code = file.read_text()
-        relative_path = file.relative_to(path).as_posix()  # e.g. "pkg/utils/math.py"
+        relative_path = file.relative_to(path).as_posix()
         modules[relative_path] = code
     return modules
 
 
-def write_files(edits: dict[str, str], base: Path) -> None:
-    """
-    Writes each edited file into `base/_improved/<relative path>.py`,
-    creating any required sub-directories first.
-
-    Example:
-        edits = {
-            "infra/openai_client.py": "...",
-            "samp/mod3.py": "...",
-        }
-        ⇒ files are written to
-           <base>/_improved/infra/openai_client.py
-           <base>/_improved/samp/mod3.py
-    """
-    target = base / "_improved"
-    target.mkdir(exist_ok=True)
-    target_root = base / "_improved"
-    for rel_path_str, code in edits.items():
-        wrapped_code = f'"""\n{code.rstrip()}\n"""'
-        rel_path = Path(rel_path_str)
-        dest_path = target_root / rel_path
-        dest_path.parent.mkdir(parents=True, exist_ok=True)
-        dest_path.write_text(wrapped_code)
-
-
+# TODO: Clean this up and improve documentation.
 def write_file(path: str | Path, code: str, root: Path | None = None) -> None:
     """
     Write *code* to disk, mirroring the original directory structure
@@ -79,7 +57,7 @@ def write_file(path: str | Path, code: str, root: Path | None = None) -> None:
     Parameters
     ----------
     path : str | Path
-        The source file’s **relative** path (e.g. ``"pkg/foo.py"``) or an
+        The source file's **relative** path (e.g., ``"pkg/foo.py"``) or an
         absolute path.  If absolute, only its tail after *root* is preserved.
     code : str
         The code to write.
@@ -87,6 +65,10 @@ def write_file(path: str | Path, code: str, root: Path | None = None) -> None:
         The project root that was handed to ``load_modules``.  If omitted,
         ``Path.cwd()`` is used, so running the pipeline from anywhere still
         writes files under ``./_improved``.
+
+    Returns
+    -------
+    None
     """
     path = Path(path)
     base = Path(root) if root else Path.cwd()

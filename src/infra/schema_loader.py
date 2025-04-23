@@ -1,6 +1,6 @@
 """
-Loads the JSON schema that defines the model's response format
-and exposes a reusable jsonschema.Validator instance.
+Loads the JSON schema that defines the model's response format and exposes a reusable
+jsonschema.Validator instance.
 """
 
 import json

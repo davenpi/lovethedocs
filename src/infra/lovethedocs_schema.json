@@ -3,47 +3,42 @@
     "title": "code_documentation_edits",
     "type": "object",
     "properties": {
-      "path": {"type": "string"},
-      "functions": {
+      "function_edits": {
         "type": "array",
-        "items": { "$ref": "#/$defs/function" }
+        "items": { "$ref": "#/$defs/function_edit" }
       },
-      "classes": {
+      "class_edits": {
         "type": "array",
-        "items": { "$ref": "#/$defs/class" }
+        "items": { "$ref": "#/$defs/class_edit" }
       }
     },
-    "required": ["path", "functions", "classes"],
+    "required": ["function_edits", "class_edits"],
     "additionalProperties": false,
   
     "$defs": {
-      "function": {
+      "function_edit": {
         "type": "object",
         "properties": {   
-          "qualname":  { "type": "string" },   
-          "edit_type": { "enum": ["docstring", "examples", "signature"] },
-          "docstring": { "type": "string" },
-          "signature": { "type": "string" },
-          "examples":  {
-            "type": "array",
-            "items": { "type": "string" }
-          }
+          "qualname":  { "type": "string" }, 
+          "signature": { "type": "string" },  
+          "docstring": { "type": "string" }
+          
         },
-        "required": ["qualname", "edit_type", "docstring", "signature", "examples"],
+        "required": ["qualname", "docstring", "signature"],
         "additionalProperties": false
       },
   
-      "class": {
+      "class_edit": {
         "type": "object",
         "properties": {        
           "qualname": { "type": "string" },         
           "docstring":{ "type": "string" },
-          "methods": {
+          "method_edits": {
             "type": "array",
-            "items": { "$ref": "#/$defs/function" }
+            "items": { "$ref": "#/$defs/function_edit" }
           }
         },
-        "required": ["qualname", "methods", "docstring"],
+        "required": ["qualname", "docstring", "method_edits"],
         "additionalProperties": false
       }
     }

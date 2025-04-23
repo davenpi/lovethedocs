@@ -25,25 +25,34 @@ def run_pipeline(paths: Sequence[str], settings: config.Settings = config.Settin
         base = Path(raw_path)
         modules = file_system.load_modules(base)  # dict[module_path, code]
         prompts = prompt_builder.build_prompts(modules)
-        # keys = list(prompts.keys())
-        # print(f"PROMPT FOR {base}:\n{prompts[keys[0]]}")
 
         for path, prompt in prompts.items():
-            response_json = openai_client.request(prompt)
-            # print(f"Response JSON for {path}: {json.dumps(response_json, indent=2)}")
+            print("-" * 80)
+            print(f"Prompt for {path}:\n {prompt}")
+            response_json = openai_client.request(prompt, model=settings.model_name)
             validator.validate(response_json)  # raise error if invalid
-            # convert each function in the response list of functions to a FunctionEdit
-            function_edits = [FunctionEdit(**f) for f in response_json["functions"]]
-            class_edits = [ClassEdit(**c) for c in response_json["classes"]]
-            # convert each class in the response list of classes to a ClassEdit
-            module_edit = ModuleEdit(
-                path=path,
-                functions=function_edits,
-                classes=class_edits,
-            )
-            # print(f"Module edit for {path}: {module_edit}")
-            edits_by_qual = module_edit.edits_by_qualname()
-            patcher = DocSigPatcher(edits_by_qual)
-            new_code = cst.parse_module(modules[path]).visit(patcher).code
-            # print(f"New code for {path}:\n{new_code}")
-            file_system.write_file(path, new_code, root=base)
+
+            module_edit = _create_module_edit_from_json(response_json)
+            new_code = _write_new_code(modules, path, module_edit)
+            print(f"New code for {path}: {new_code}")
+            # file_system.write_file(path, new_code, root=base)
+
+
+def _create_module_edit_from_json(json_data):
+    function_edits = [FunctionEdit(**f) for f in json_data["function_edits"]]
+    class_edits = [
+        ClassEdit(
+            qualname=c["qualname"],
+            docstring=c["docstring"],
+            method_edits=[FunctionEdit(**m) for m in c["method_edits"]],
+        )
+        for c in json_data["class_edits"]
+    ]
+    return ModuleEdit(function_edits=function_edits, class_edits=class_edits)
+
+
+def _write_new_code(modules, path, module_edit: ModuleEdit):
+    edits_by_qual = module_edit.map_qnames_to_edits()
+    patcher = DocSigPatcher(edits_by_qual)
+    new_code = cst.parse_module(modules[path]).visit(patcher).code
+    return new_code

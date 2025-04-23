@@ -4,85 +4,49 @@ from src.domain.models import ModuleEdit, FunctionEdit, ClassEdit
 from dataclasses import asdict
 
 
-def _make_function(name, etype):
+def _make_function_edit(qualname):
     return {
-        "qualname": name,
-        "docstring": f"{name} docs",
-        "signature": f"{name}()",
-        "edit_type": etype,
-        "examples": None,
+        "qualname": qualname,
+        "docstring": f"{qualname} docs",
+        "signature": f"{qualname}()",
     }
 
 
 def test_moduleedit_roundtrip():
     raw = {
-        "path": "foo.py",
-        "functions": [
-            _make_function("foo", "docstring"),
+        "function_edits": [
+            _make_function_edit("foo"),
         ],
-        "classes": [],
+        "class_edits": [],
     }
     obj = ModuleEdit(
-        path=raw["path"],
-        functions=[FunctionEdit(**raw["functions"][0])],
-        classes=[],
+        function_edits=[FunctionEdit(**raw["function_edits"][0])],
+        class_edits=raw["class_edits"],
     )
+
     assert asdict(obj) == raw
 
 
 def test_moduleedit_all_objects():
-    function = FunctionEdit(
-        qualname="foo",
-        docstring="?",
-        signature="foo()",
-        edit_type="docstring",
-        examples=None,
-    )
     raw = {
-        "path": "foo.py",
-        "functions": [
-            _make_function("foo", "docstring"),
+        "function_edits": [
+            _make_function_edit("foo"),
         ],
-        "classes": [
-            {"qualname": "Bar", "docstring": "?", "methods": [function]},
-        ],
-    }
-    obj = ModuleEdit(
-        path=raw["path"],
-        functions=[FunctionEdit(**raw["functions"][0])],
-        classes=[ClassEdit(**raw["classes"][0])],
-    )
-    edits = obj.edits_by_qualname()
-    print(edits)
-    assert len(edits) == 3
-    assert edits["foo"].qualname == "foo"
-    assert edits["Bar"].qualname == "Bar"
-    assert edits["Bar.foo"].qualname == "foo"
-
-
-def test_edits_by_qualname_nested():
-    raw = {
-        "path": "foo.py",
-        "functions": [_make_function("top", "docstring")],
-        "classes": [
+        "class_edits": [
             {
-                "qualname": "Outer",
-                "docstring": "cls docs",
-                "methods": [_make_function("inner", "signature")],
-            }
+                "qualname": "Bar",
+                "docstring": "?",
+                "method_edits": [FunctionEdit(**_make_function_edit("Bar.baz"))],
+            },
         ],
     }
     obj = ModuleEdit(
-        path=raw["path"],
-        functions=[FunctionEdit(**raw["functions"][0])],
-        classes=[
-            ClassEdit(
-                qualname="Outer",
-                docstring="cls docs new",
-                methods=[FunctionEdit(**raw["classes"][0]["methods"][0])],
-            )
-        ],
+        function_edits=[FunctionEdit(**raw["function_edits"][0])],
+        class_edits=[ClassEdit(**raw["class_edits"][0])],
     )
-    m = obj.edits_by_qualname()
-    assert set(m) == {"top", "Outer", "Outer.inner"}
-    assert m["Outer"].docstring == "cls docs new"
+    qname_to_edit = obj.map_qnames_to_edits()
+
+    assert len(qname_to_edit) == 3
+    assert qname_to_edit["foo"].qualname == "foo"
+    assert qname_to_edit["Bar.baz"].qualname == "Bar.baz"
+    assert qname_to_edit["Bar"].docstring == "?"

@@ -5,17 +5,20 @@ from jsonschema.exceptions import ValidationError
 from src.infra.schema_loader import VALIDATOR
 
 GOOD_PAYLOAD = {
-    "path": "pkg/foo.py",
-    "functions": [
+    "function_edits": [{"qualname": "foo", "signature": "foo()", "docstring": "hi"}],
+    "class_edits": [
         {
-            "qualname": "foo",
+            "qualname": "Bar",
             "docstring": "hi",
-            "edit_type": "docstring",
-            "signature": "foo()",
-            "examples": [],
+            "method_edits": [
+                {
+                    "qualname": "baz",
+                    "docstring": "hi",
+                    "signature": "baz()",
+                }
+            ],
         }
     ],
-    "classes": [],
 }
 
 
@@ -27,11 +30,12 @@ def test_schema_accepts_good_payload():
 @pytest.mark.parametrize(
     "mutate",
     [
-        lambda d: d.pop("functions"),  # missing functions
-        lambda d: d.pop("path"),  # missing path
-        lambda d: d["functions"].append(
+        lambda d: d.pop("function_edits"),  # missing functions
+        lambda d: d["function_edits"].append(
             {"qualname": "bar"}  # missing several required fields
         ),
+        lambda d: d.pop("class_edits"),  # missing classes
+        lambda d: d["class_edits"][0].pop("method_edits"),  # missing class methods
     ],
 )
 def test_schema_rejects_bad_payload(mutate):

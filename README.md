@@ -64,3 +64,8 @@ itself.
 ### Result
 
 Beautiful docs.
+
+### Misc
+
+Aliases are defined in a `.aliases` file. They are merely for convenience. Run
+`source .aliases` to activate them.

@@ -7,32 +7,61 @@ from typing import List, Optional
 @dataclass
 class FunctionEdit:
     qualname: str
-    edit_type: str  # "docstring" | "signature" | "examples"
     docstring: Optional[str] = None
     signature: Optional[str] = None
-    examples: Optional[List[str]] = None  # future‑use
 
 
 @dataclass
 class ClassEdit:
     qualname: str
     docstring: Optional[str] = None
-    methods: List[FunctionEdit] = field(default_factory=list)
+    method_edits: List[FunctionEdit] = field(default_factory=list)
 
 
 @dataclass
 class ModuleEdit:
-    path: str
-    functions: List[FunctionEdit] = field(default_factory=list)
-    classes: List[ClassEdit] = field(default_factory=list)
+    function_edits: List[FunctionEdit] = field(default_factory=list)
+    class_edits: List[ClassEdit] = field(default_factory=list)
 
-    # flatten for quick lookup
-    def edits_by_qualname(self) -> dict[str, FunctionEdit | ClassEdit]:
-        m: dict[str, FunctionEdit | ClassEdit] = {}
-        for f in self.functions:
-            m[f.qualname] = f
-        for c in self.classes:
-            m[c.qualname] = c
-            for mtd in c.methods:
-                m[f"{c.qualname}.{mtd.qualname}"] = mtd
-        return m
+    def map_qnames_to_edits(module_edit: ModuleEdit) -> dict[FunctionEdit | ClassEdit]:
+        """
+        Flatten the module edits into a map from qualname to edit.
+
+        Note the method edits are included in the class edits as well. So there is
+        redundancy in the data structure.
+
+        For example::
+
+            ModuleEdit(
+                function_edits=[FunctionEdit(qualname="foo")],
+                class_edits=[
+                    ClassEdit(
+                        qualname="Bar",
+                        docstring="?",
+                        method_edits=[FunctionEdit(qualname="Bar.baz")],
+                    )
+                ],
+            )
+        produces the following map::
+
+            {
+                "foo": FunctionEdit(qualname="foo"),
+                "Bar": ClassEdit(
+                            qualname="Bar",
+                            docstring="?",
+                            method_edits=[FunctionEdit(qualname="Bar.baz")]
+                        ),
+                "Bar.baz": FunctionEdit(qualname="Bar.baz"),
+            }
+        where the 'Bar.baz' edit is included in both the class edit and its own entry.
+        This is to allow for easy access to the edits by qualname for the patcher.
+        """
+        edits = []
+        for f_edit in module_edit.function_edits:
+            edits.append(f_edit)
+        for c_edit in module_edit.class_edits:
+            edits.append(c_edit)
+            for mtd_edit in c_edit.method_edits:
+                edits.append(mtd_edit)
+        qualname_to_edit = {edit.qualname: edit for edit in edits}
+        return qualname_to_edit
