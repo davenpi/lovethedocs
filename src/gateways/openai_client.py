@@ -2,15 +2,46 @@
 Tiny wrapper so the rest of the code never imports openai directly.
 """
 
+from functools import lru_cache
 import json
+import os
+from pathlib import Path
 from typing import Any
 
 from openai import OpenAI
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 
 from .schema_loader import _RAW_SCHEMA
 
-config = dotenv_values(".env")
+
+@lru_cache(maxsize=1)
+def _get_client() -> OpenAI:
+    api_key = _get_api_key()
+    return OpenAI(api_key=api_key)
+
+
+def _get_api_key() -> str:
+    """
+    Get the OpenAI API key from the environment or .env file.
+    """
+    # Check if the API key is already set in the environment
+    api_key = os.getenv("OPENAI_API_KEY")
+
+    if not api_key:
+        # Look for .env file in the current directory or parent directories
+        project_root = Path(__file__).resolve().parent.parent  # /abs_path/to/src
+        for candidate in [project_root / ".env", project_root.parent / ".env"]:
+            if candidate.exists():
+                load_dotenv(candidate)  # Load the .env file into the environment
+                api_key = os.getenv("OPENAI_API_KEY")
+                break
+    if not api_key:
+        raise RuntimeError(
+            "OPENAI_API_KEY not found. "
+            "Set it in the environment or in a .env file at project root."
+        )
+    return api_key
+
 
 # STRANGE: Removing
 # "*(All examples are shown **exactly** as the model should output them inside the
@@ -100,10 +131,8 @@ deliver laser-focused, high-quality output.
 """
 
 
-client = OpenAI(api_key=config["OPENAI_API_KEY"])
-
-
 def request(source_prompt: str, *, model: str = "gpt-4.1") -> dict[str, Any]:
+    client = _get_client()
     response = client.responses.create(
         model=model,
         instructions=_DEV_PROMPT,
