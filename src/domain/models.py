@@ -23,7 +23,9 @@ class ModuleEdit:
     function_edits: List[FunctionEdit] = field(default_factory=list)
     class_edits: List[ClassEdit] = field(default_factory=list)
 
-    def map_qnames_to_edits(module_edit: ModuleEdit) -> dict[FunctionEdit | ClassEdit]:
+    def map_qnames_to_edits(
+        self,
+    ) -> dict[str, FunctionEdit | ClassEdit]:
         """
         Flatten the module edits into a map from qualname to edit.
 
@@ -57,9 +59,9 @@ class ModuleEdit:
         This is to allow for easy access to the edits by qualname for the patcher.
         """
         edits = []
-        for f_edit in module_edit.function_edits:
+        for f_edit in self.function_edits:
             edits.append(f_edit)
-        for c_edit in module_edit.class_edits:
+        for c_edit in self.class_edits:
             edits.append(c_edit)
             for mtd_edit in c_edit.method_edits:
                 edits.append(mtd_edit)
