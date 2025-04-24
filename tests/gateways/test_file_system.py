@@ -3,7 +3,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from src.infra.file_system import load_modules, write_file
+from src.gateways.file_system import load_modules, write_file
 
 
 def _write(p: Path, content: str):

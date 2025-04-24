@@ -1,3 +1,5 @@
+"""LibCST visitors used by the documentation pipeline."""
+
 import textwrap
 import libcst as cst
 from src.domain.models import ClassEdit, FunctionEdit

@@ -2,7 +2,7 @@ import copy
 import pytest
 from jsonschema.exceptions import ValidationError
 
-from src.infra.schema_loader import VALIDATOR
+from src.gateways.schema_loader import VALIDATOR
 
 GOOD_PAYLOAD = {
     "function_edits": [{"qualname": "foo", "signature": "foo()", "docstring": "hi"}],

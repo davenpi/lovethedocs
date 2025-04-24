@@ -1,5 +1,5 @@
 """
-Tests for src.infra.ast_patcher.DocSigPatcher.
+Tests for sr.c.application.transformers.DocSigPatcher.
 
 The goals are to
 1. Verify docstring *insertion* and *replacement* at several nesting depths.
@@ -15,7 +15,7 @@ import textwrap
 import libcst as cst
 import pytest
 
-from src.infra.ast_patcher import DocSigPatcher
+from src.application.transformers import DocSigPatcher
 from src.domain.models import FunctionEdit, ClassEdit, ModuleEdit
 
 

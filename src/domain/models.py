@@ -43,8 +43,8 @@ class ModuleEdit:
                         method_edits=[FunctionEdit(qualname="Bar.baz")],
                     )
                 ],
-            )
-        produces the following map::
+            ).map_qnames_to_edits()
+        returns the following map::
 
             {
                 "foo": FunctionEdit(qualname="foo"),
