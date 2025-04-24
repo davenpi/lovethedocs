@@ -2,7 +2,8 @@ import textwrap
 import tempfile
 from pathlib import Path
 
-from src.infra.file_system import load_modules
+import pytest
+from src.infra.file_system import load_modules, write_file
 
 
 def _write(p: Path, content: str):
@@ -44,3 +45,48 @@ def test_load_modules_preserves_blank_lines_and_unicode():
         modules = load_modules(root)
 
         assert modules["naïve.py"] == code  # exact match, no .strip()
+
+
+def test_write_file_relative_explicit_root():
+    with tempfile.TemporaryDirectory() as tmp:
+        project_root = Path(tmp) / "repo"
+        (project_root / "src").mkdir(parents=True)
+
+        source = Path("src/alpha.py")  # relative path
+        code = "print('hello')"  # no trailing newline
+
+        write_file(source, code, root=project_root)
+
+        dest = project_root / "_improved" / source
+        assert dest.is_file(), "destination file should exist"
+        assert (
+            dest.read_text(encoding="utf-8") == code + "\n"
+        ), "file should end with exactly one newline"
+
+
+def test_write_file_absolute_under_root():
+    with tempfile.TemporaryDirectory() as tmp:
+        project_root = Path(tmp) / "repo"
+        source_file = project_root / "pkg" / "beta.py"
+        source_file.parent.mkdir(parents=True, exist_ok=True)
+
+        code = "x = 1\n\n"  # two trailing newlines
+        source_file.write_text(code)
+
+        write_file(source_file, code, root=project_root)
+
+        dest = project_root / "_improved" / "pkg" / "beta.py"
+        assert (
+            dest.read_text() == "x = 1\n"
+        ), "write_file should collapse multiple newlines to one"
+
+
+def test_write_file_absolute_outside_root_raises():
+    with tempfile.TemporaryDirectory() as tmp:
+        project_root = Path(tmp) / "repo"
+        project_root.mkdir()
+
+        outside_file = Path(tmp) / "elsewhere.py"
+
+        with pytest.raises(ValueError):
+            write_file(outside_file, "pass", root=project_root)

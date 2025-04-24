@@ -48,33 +48,38 @@ def load_modules(path: Path) -> dict[str, str]:
     return modules
 
 
-# TODO: Clean this up and improve documentation.
 def write_file(path: str | Path, code: str, root: Path | None = None) -> None:
     """
-    Write *code* to disk, mirroring the original directory structure
-    under an ``_improved`` folder.
+    Write code to disk under an '_improved' directory, preserving directory structure.
+
+    Writes the provided code to a file path that mirrors the original directory
+    structure beneath an '_improved' folder. The new code is rooted at the given
+    project root or the current working directory. Ensures that the written file ends
+    with a single trailing newline.
 
     Parameters
     ----------
-    path : str | Path
-        The source file's **relative** path (e.g., ``"pkg/foo.py"``) or an
-        absolute path.  If absolute, only its tail after *root* is preserved.
+    path : str or Path
+        The source file's relative or absolute path. If absolute, only the portion
+        after 'root' is preserved in the output structure.
     code : str
-        The code to write.
-    root : Path | None, default None
-        The project root that was handed to ``load_modules``.  If omitted,
-        ``Path.cwd()`` is used, so running the pipeline from anywhere still
-        writes files under ``./_improved``.
+        The code to write to the file.
+    root : Path or None, optional
+        The project root directory. If None, uses the current working directory.
 
     Returns
     -------
     None
     """
     path = Path(path)
-    base = Path(root) if root else Path.cwd()
+    base = Path(root or Path.cwd())
+
+    # Resolve relative path based on root or current working directory
+    if path.is_absolute():
+        path = path.relative_to(base)
 
     # Always write under <base>/_improved/<original path>
-    dest = base / Path("_improved") / path
+    dest = base / "_improved" / path
     dest.parent.mkdir(parents=True, exist_ok=True)
 
     # Ensure a single trailing newline; many tools expect it
