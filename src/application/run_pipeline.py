@@ -23,17 +23,19 @@ def _summarize_and_log_failures(
     failures: Iterable[tuple[Path, Exception]], processed: int
 ) -> None:
     """
-    Summarize and log module processing failures.
+    Summarize and log failures encountered during module processing.
 
-    Writes a summary of failed modules to the console, dumps details to
-    'failed_modules.json', and logs full tracebacks to 'pipeline.log'. If there are no
-    failures, prints a success message.
+    Prints a summary of successful and failed modules to the console, writes details of
+    failures to 'failed_modules.json', and logs full exception tracebacks to 'pipeline.log'.
+    If there are no failures, prints a success message.
 
     Parameters
     ----------
     failures : Iterable[tuple[Path, Exception]]
         An iterable of (Path, Exception) tuples representing failed modules and their
-        errors.
+        associated exceptions.
+    processed : int
+        The total number of modules processed.
     """
     failures = list(failures)  # exhaust any iterator
     if not failures:
@@ -66,9 +68,9 @@ def run_pipeline(
     """
     Run the documentation update pipeline for a sequence of module paths.
 
-    Loads modules, builds prompts, requests AI-generated doc edits,
-    validates responses, updates module files, and logs any failures. Writes a summary
-    of failures at the end.
+    Loads modules, builds prompts, requests AI-generated documentation edits, validates
+    responses, updates module files, and logs any failures. At the end, writes a summary of
+    failures.
 
     Parameters
     ----------

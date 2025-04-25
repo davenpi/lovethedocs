@@ -8,20 +8,30 @@ import libcst as cst
 # TODO: Check on node types in the visitor methods (lovethedocs suggested them).
 class ObjCollector(cst.CSTVisitor):
     """
-    Collects qualified names of classes and functions in a CST module.
+    Collect qualified names of classes and functions in a LibCST module.
 
-    This visitor traverses a LibCST module and records the qualified names of all
-    classes and functions encountered, maintaining a stack to track nesting.
+    This CSTVisitor traverses a LibCST module, recording the qualified names of all
+    classes and functions encountered. It maintains a stack to track nesting and builds
+    fully qualified names for each object.
     """
 
     def __init__(self) -> None:
-        """Initialize the ObjCollector with empty stack and qualnames list."""
+        """
+        Initialize the ObjCollector with an empty stack and qualnames list.
+
+        Initializes the stack for tracking nested object names and the qualnames list
+        for storing fully qualified names of classes and functions encountered during
+        traversal.
+        """
         self.stack = []  # keeps current qualname parts
         self.qualnames = []
 
     def _push(self, name: str) -> None:
         """
         Push a name onto the stack and record its qualified name.
+
+        Appends the given name to the stack, constructs the current qualified name, and
+        adds it to the qualnames list.
 
         Parameters
         ----------
@@ -39,6 +49,9 @@ class ObjCollector(cst.CSTVisitor):
         """
         Visit a function definition node and record its qualified name.
 
+        Pushes the function name onto the stack and records its qualified name when a
+        FunctionDef node is visited.
+
         Parameters
         ----------
         node : cst.FunctionDef
@@ -49,6 +62,9 @@ class ObjCollector(cst.CSTVisitor):
     def visit_ClassDef(self, node):
         """
         Visit a class definition node and record its qualified name.
+
+        Pushes the class name onto the stack and records its qualified name when a ClassDef
+        node is visited.
 
         Parameters
         ----------
@@ -61,6 +77,9 @@ class ObjCollector(cst.CSTVisitor):
         """
         Pop the last function name from the stack after leaving its definition.
 
+        Removes the most recent function name from the stack when leaving a FunctionDef
+        node.
+
         Parameters
         ----------
         node : cst.FunctionDef
@@ -72,6 +91,8 @@ class ObjCollector(cst.CSTVisitor):
         """
         Pop the last class name from the stack after leaving its definition.
 
+        Removes the most recent class name from the stack when leaving a ClassDef node.
+
         Parameters
         ----------
         node : cst.ClassDef
@@ -82,10 +103,12 @@ class ObjCollector(cst.CSTVisitor):
 
 def build_prompts(modules: dict[str, str]) -> dict:
     """
-    Build prompts for each module in the input dictionary.
+    Build prompts for each module, listing qualified object names and source code.
 
-    The function generates a prompt for each module, listing all qualified object names
-    and including the module's source code between BEGIN/END markers.
+    The function iterates over the provided modules, collects all qualified object
+    names (classes and functions) using ObjCollector, and constructs a prompt for each
+    module that includes the object list and the module's source code between BEGIN/END
+    markers.
 
     Parameters
     ----------
@@ -95,8 +118,9 @@ def build_prompts(modules: dict[str, str]) -> dict:
 
     Returns
     -------
-    - prompts : dict[str, str]
-        A dictionary mapping module names to their generated prompts.
+    prompts : dict[str, str]
+        A dictionary mapping module names to their generated prompts, each containing a
+        list of qualified object names and the module's source code.
     """
     prompts = {}
     for path, source in modules.items():

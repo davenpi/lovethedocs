@@ -15,3 +15,13 @@ find "$root" -type f -path "*/${improved}/*.py" | while read -r imp; do
 done
 
 wait
+
+# ---- lovethedocs diff helper ----
+# accept () {
+#   imp="$1"                               # path inside _improved/…
+#   orig="${imp/_improved\//}"             # strip that segment
+#   cp "$orig" "${orig}.bak"               # 1-shot backup
+#   cp "$imp"  "$orig"                     # overwrite original
+#   echo "✔ accepted $imp → $orig"
+# }
+# ----------------------------------
