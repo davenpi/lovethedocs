@@ -6,6 +6,19 @@ from typing import List, Optional
 
 @dataclass
 class FunctionEdit:
+    """
+    Represents an edit to a function's docstring and/or signature.
+
+    Attributes
+    ----------
+    qualname : str
+        The fully qualified name of the function to edit.
+    docstring : Optional[str]
+        The new docstring for the function, or None if unchanged.
+    signature : Optional[str]
+        The new signature for the function, or None if unchanged.
+    """
+
     qualname: str
     docstring: Optional[str] = None
     signature: Optional[str] = None
@@ -13,6 +26,19 @@ class FunctionEdit:
 
 @dataclass
 class ClassEdit:
+    """
+    Represents an edit to a class's docstring and its methods' docstrings/signatures.
+
+    Attributes
+    ----------
+    qualname : str
+        The fully qualified name of the class to edit.
+    docstring : Optional[str]
+        The new docstring for the class, or None if unchanged.
+    method_edits : List[FunctionEdit]
+        A list of edits to the class's methods.
+    """
+
     qualname: str
     docstring: Optional[str] = None
     method_edits: List[FunctionEdit] = field(default_factory=list)
@@ -20,6 +46,17 @@ class ClassEdit:
 
 @dataclass
 class ModuleEdit:
+    """
+    Represents a collection of edits to functions and classes within a module.
+
+    Attributes
+    ----------
+    function_edits : List[FunctionEdit]
+        A list of edits to top-level functions in the module.
+    class_edits : List[ClassEdit]
+        A list of edits to classes in the module.
+    """
+
     function_edits: List[FunctionEdit] = field(default_factory=list)
     class_edits: List[ClassEdit] = field(default_factory=list)
 
@@ -27,36 +64,17 @@ class ModuleEdit:
         self,
     ) -> dict[str, FunctionEdit | ClassEdit]:
         """
-        Flatten the module edits into a map from qualname to edit.
+        Return a mapping from qualified names to their corresponding edit objects.
 
-        Note the method edits are included in the class edits as well. So there is
-        redundancy in the data structure.
+        This method flattens the function and class edits, including method edits from
+        classes, into a single dictionary keyed by qualified name. Method edits are
+        included both as part of their parent class and as individual entries for
+        direct access.
 
-        For example::
-
-            ModuleEdit(
-                function_edits=[FunctionEdit(qualname="foo")],
-                class_edits=[
-                    ClassEdit(
-                        qualname="Bar",
-                        docstring="?",
-                        method_edits=[FunctionEdit(qualname="Bar.baz")],
-                    )
-                ],
-            ).map_qnames_to_edits()
-        returns the following map::
-
-            {
-                "foo": FunctionEdit(qualname="foo"),
-                "Bar": ClassEdit(
-                            qualname="Bar",
-                            docstring="?",
-                            method_edits=[FunctionEdit(qualname="Bar.baz")]
-                        ),
-                "Bar.baz": FunctionEdit(qualname="Bar.baz"),
-            }
-        where the 'Bar.baz' edit is included in both the class edit and its own entry.
-        This is to allow for easy access to the edits by qualname for the patcher.
+        Returns
+        -------
+        dict[str, FunctionEdit | ClassEdit]
+            A mapping from qualified names to their corresponding edit objects.
         """
         edits = []
         for f_edit in self.function_edits:
@@ -65,5 +83,4 @@ class ModuleEdit:
             edits.append(c_edit)
             for mtd_edit in c_edit.method_edits:
                 edits.append(mtd_edit)
-        edits_by_qname = {edit.qualname: edit for edit in edits}
-        return edits_by_qname
+        return {edit.qualname: edit for edit in edits}

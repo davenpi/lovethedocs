@@ -16,13 +16,37 @@ from .schema_loader import _RAW_SCHEMA
 
 @lru_cache(maxsize=1)
 def _get_client() -> OpenAI:
+    """
+    Return a cached OpenAI client instance using the API key from the environment.
+
+    Uses LRU caching to ensure only one client instance is created per process.
+
+    Returns
+    -------
+    OpenAI
+        An instance of the OpenAI client initialized with the API key.
+    """
     api_key = _get_api_key()
     return OpenAI(api_key=api_key)
 
 
 def _get_api_key() -> str:
     """
-    Get the OpenAI API key from the environment or .env file.
+    Retrieve the OpenAI API key from the environment or a .env file.
+
+    Checks the environment variable 'OPENAI_API_KEY'. If not found, attempts to load
+    it from a .env file located in the project root or its parent directory. Raises an
+    error if the key is not found.
+
+    Returns
+    -------
+    str
+        The OpenAI API key as a string.
+
+    Raises
+    ------
+    RuntimeError
+        If the API key is not found in the environment or .env file.
     """
     # Check if the API key is already set in the environment
     api_key = os.getenv("OPENAI_API_KEY")
@@ -132,6 +156,24 @@ deliver laser-focused, high-quality output.
 
 
 def request(source_prompt: str, *, model: str = "gpt-4.1") -> dict[str, Any]:
+    """
+    Send a prompt to the OpenAI API and return the parsed JSON response.
+
+    Uses the specified model to generate a response according to the developer prompt
+    and schema. The response is parsed from JSON and returned as a dictionary.
+
+    Parameters
+    ----------
+    source_prompt : str
+        The user prompt to send to the OpenAI API.
+    model : str, optional
+        The model name to use for the request (default is 'gpt-4.1').
+
+    Returns
+    -------
+    dict[str, Any]
+        The parsed JSON response from the OpenAI API.
+    """
     client = _get_client()
     response = client.responses.create(
         model=model,

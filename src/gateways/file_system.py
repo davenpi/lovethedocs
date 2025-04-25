@@ -9,31 +9,21 @@ IGNORED_DIRS = {"venv", ".git", "__pycache__", ".pytest_cache", ".vscode"}
 
 def load_modules(path: Path) -> dict[str, str]:
     """
-    Load all python modules in a given path, return dict with path-code pairs.
+    Load all Python modules in a directory, returning a path-to-code mapping.
 
-    Also ignores directories that are in the `IGNORED_DIRS` set, and skips
-    `__init__.py` and `__main__.py` files.
-
-    For example::
-
-        path = Path("src/")
-        load_modules(path)
-        ⇒ {
-            "src/hello.py": "source code...",
-            "src/main.py": "source code...",
-            ...
-        }
+    Ignores directories listed in `IGNORED_DIRS` and skips `__init__.py` and
+    `__main__.py` files. Returns a dictionary mapping each module's relative path to
+    its source code as a string.
 
     Parameters
     ----------
     path : Path
-        The path to the directory containing the Python modules.
+        The path to the directory containing Python modules to load.
 
     Returns
     -------
     dict[str, str]
-        A dictionary where the keys are the relative paths of the Python modules
-        and the values are their corresponding code as strings.
+        A dictionary mapping relative file paths to their corresponding source code.
     """
     modules: dict[str, str] = {}
     for file in path.rglob("*.py"):
@@ -53,9 +43,9 @@ def write_file(path: str | Path, code: str, root: Path | None = None) -> None:
     Write code to disk under an '_improved' directory, preserving directory structure.
 
     Writes the provided code to a file path that mirrors the original directory
-    structure beneath an '_improved' folder. The new code is rooted at the given
-    project root or the current working directory. Ensures that the written file ends
-    with a single trailing newline.
+    structure beneath an '_improved' folder. The output is rooted at the given project
+    root or the current working directory. Ensures the written file ends with a single
+    trailing newline.
 
     Parameters
     ----------

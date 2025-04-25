@@ -11,8 +11,13 @@ def main() -> None:
     """
     Parse command-line arguments and run the documentation pipeline.
 
-    This function sets up the argument parser, collects the paths to be documented,
-    and invokes the pipeline to process the specified directories.
+    This function sets up the argument parser, collects the paths to be documented, and
+    invokes the pipeline to process the specified directories.
+
+    Returns
+    -------
+    None
+        This function does not return a value.
     """
     parser = argparse.ArgumentParser(prog="lovethedocs")
     parser.add_argument(
