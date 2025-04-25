@@ -1,7 +1,7 @@
 from src.domain.models import ClassEdit, FunctionEdit, ModuleEdit
 
 
-def create_module_edit_from_json(json_data):
+def map_json_to_module_edit(json_data):
     function_edits = [FunctionEdit(**f) for f in json_data["function_edits"]]
     class_edits = [
         ClassEdit(

@@ -1,4 +1,4 @@
-from src.application.mappers import create_module_edit_from_json
+from src.application.mappers import map_json_to_module_edit
 from src.domain.models import FunctionEdit, ModuleEdit
 
 
@@ -11,7 +11,7 @@ def test_create_module_edit_from_json_roundtrip():
         "class_edits": [],
     }
 
-    mod_edit = create_module_edit_from_json(src_json)
+    mod_edit = map_json_to_module_edit(src_json)
     assert isinstance(mod_edit, ModuleEdit)
     assert mod_edit.function_edits[0] == FunctionEdit(
         qualname="foo", docstring="Hello", signature=None

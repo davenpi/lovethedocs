@@ -30,6 +30,8 @@ def run_pipeline(
             resp_json = ai_client.request(prompt, model=settings.model_name)
             validator.validate(resp_json)
 
-            module_edit = mappers.create_module_edit_from_json(resp_json)
-            new_code = services.write_new_code(modules[path], module_edit)
-            file_writer.write_file(path, new_code, root=base)
+            module_edit = mappers.map_json_to_module_edit(resp_json)
+            updated_code = services.update_module_docs(
+                old_module=modules[path], module_edit=module_edit
+            )
+            file_writer.write_file(path, updated_code, root=base)
