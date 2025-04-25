@@ -149,7 +149,5 @@ def request(source_prompt: str, *, model: str = "gpt-4.1") -> dict[str, Any]:
         },
         temperature=0,
     )
-    print("Model responded!")
     response_json = json.loads(response.output_text)
-    print("Response JSON:", response_json)
     return response_json

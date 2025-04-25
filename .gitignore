@@ -17,3 +17,7 @@ __pycache__/
 
 # dummy code for testing
 smoke/
+*_improved/
+
+# run logs
+*.log

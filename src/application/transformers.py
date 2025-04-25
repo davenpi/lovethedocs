@@ -33,6 +33,7 @@ def _make_docstring_stmt(body: str, indent: str) -> cst.SimpleStatementLine:
     )
 
 
+# TODO: Check type hinting.
 def _parse_header(header: str) -> cst.FunctionDef:
     """
     Parse a function header string into a CST FunctionDef node.

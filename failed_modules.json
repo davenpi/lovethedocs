@@ -1,0 +1,6 @@
+[
+  {
+    "module": "ports.py",
+    "error": "'SimpleStatementLine' object has no attribute 'semicolon'"
+  }
+]

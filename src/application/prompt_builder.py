@@ -5,13 +5,30 @@ Build per file prompts for the LLM.
 import libcst as cst
 
 
+# TODO: Check on node types in the visitor methods (lovethedocs suggested them).
 class ObjCollector(cst.CSTVisitor):
+    """
+    Collects qualified names of classes and functions in a CST module.
 
-    def __init__(self):
+    This visitor traverses a LibCST module and records the qualified names of all
+    classes and functions encountered, maintaining a stack to track nesting.
+    """
+
+    def __init__(self) -> None:
+        """Initialize the ObjCollector with empty stack and qualnames list."""
         self.stack = []  # keeps current qualname parts
         self.qualnames = []
 
-    def _push(self, name: str):
+    def _push(self, name: str) -> None:
+        """
+        Push a name onto the stack and record its qualified name.
+
+        Parameters
+        ----------
+        name : str
+            The name of the class or function to add to the current qualified name
+            stack.
+        """
         self.stack.append(name)
         qualname = ".".join(self.stack)
         self.qualnames.append(qualname)
@@ -19,51 +36,67 @@ class ObjCollector(cst.CSTVisitor):
 
     # ---- nodes ----
     def visit_FunctionDef(self, node):
+        """
+        Visit a function definition node and record its qualified name.
+
+        Parameters
+        ----------
+        node : cst.FunctionDef
+            The function definition node being visited.
+        """
         self._push(node.name.value)
 
     def visit_ClassDef(self, node):
+        """
+        Visit a class definition node and record its qualified name.
+
+        Parameters
+        ----------
+        node : cst.ClassDef
+            The class definition node being visited.
+        """
         self._push(node.name.value)
 
     def leave_FunctionDef(self, node):
+        """
+        Pop the last function name from the stack after leaving its definition.
+
+        Parameters
+        ----------
+        node : cst.FunctionDef
+            The function definition node being left.
+        """
         self.stack.pop()
 
     def leave_ClassDef(self, node):
+        """
+        Pop the last class name from the stack after leaving its definition.
+
+        Parameters
+        ----------
+        node : cst.ClassDef
+            The class definition node being left.
+        """
         self.stack.pop()
 
 
-def build_prompts(
-    modules: dict[str, str],
-) -> tuple[dict, dict]:
+def build_prompts(modules: dict[str, str]) -> dict:
     """
-    Return prompts and id maps for each module in *modules*.
+    Build prompts for each module in the input dictionary.
 
-    The input *modules* is a mapping of relative file paths to raw source strings
-    produced by `infra.file_system.load_modules()`. Each prompt looks like::
-
-        ### Objects in this file:
-        qualname1
-        qualname2
-        ...
-
-        BEGIN <relative_path>
-        <source code unchanged>
-        END <relative_path>
+    The function generates a prompt for each module, listing all qualified object names
+    and including the module's source code between BEGIN/END markers.
 
     Parameters
     ----------
     modules : dict[str, str]
-        A dictionary where the keys are the module names and the values are their
-        corresponding code as strings.
+        A dictionary mapping relative file paths to their corresponding source code as
+        strings.
 
     Returns
     -------
-    tuple[dict, dict]
-        - prompts : dict[str, str]
-            A dictionary where the keys are the module names and the values are
-              the corresponding prompts with BEGIN/END blocks.
-        - id_maps : dict[str, dict[str, str]]
-            A dictionary where the keys are the module names and the values are
-              dictionaries mapping object IDs to their qualified names.
+    - prompts : dict[str, str]
+        A dictionary mapping module names to their generated prompts.
     """
     prompts = {}
     for path, source in modules.items():
