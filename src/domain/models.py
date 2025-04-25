@@ -65,5 +65,5 @@ class ModuleEdit:
             edits.append(c_edit)
             for mtd_edit in c_edit.method_edits:
                 edits.append(mtd_edit)
-        qualname_to_edit = {edit.qualname: edit for edit in edits}
-        return qualname_to_edit
+        edits_by_qname = {edit.qualname: edit for edit in edits}
+        return edits_by_qname
