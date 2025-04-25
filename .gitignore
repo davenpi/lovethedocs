@@ -21,3 +21,6 @@ smoke/
 
 # run logs
 *.log
+
+# test code
+old_src/

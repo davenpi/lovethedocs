@@ -7,6 +7,7 @@ import logging
 from pathlib import Path
 from typing import Iterable, Sequence
 
+from black import FileMode, format_str
 from tqdm import tqdm
 
 from src import ports
@@ -104,6 +105,10 @@ def run_pipeline(
                 updated_code = services.update_module_docs(
                     old_module_source=modules[path], module_edit=module_edit
                 )
+                try:
+                    updated_code = format_str(updated_code, mode=FileMode())
+                except Exception as exc:
+                    print(f"Black formatting failed on {path}: {exc}")
                 file_writer.write_file(path, updated_code, root=base)
             except Exception as exc:
                 print(f"Response JSON: {json.dumps(resp_json, indent=2)}")
