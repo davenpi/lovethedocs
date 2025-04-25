@@ -11,20 +11,17 @@ from black import FileMode, format_str
 from tqdm import tqdm
 
 from src import ports
-from src.application import config, mappers, prompt_builder, services
+from src.application import config, mappers, prompt_builder, services, utils
+from src.application import logging_setup  # noqa: F401  (import side-effects only)
+
 from src.gateways import file_system as fs_gateway
 from src.gateways import openai_client as ai_gateway
 from src.gateways import schema_loader
 
-# ------- logging setup ------------------------------------------------------
-logging.basicConfig(
-    filename="pipeline.log",
-    level=logging.INFO,
-    format="%(asctime)s  %(levelname)s  %(message)s",
-)
 
-
-def _summarize_and_log_failures(failures: Iterable[tuple[Path, Exception]]) -> None:
+def _summarize_and_log_failures(
+    failures: Iterable[tuple[Path, Exception]], processed: int
+) -> None:
     """
     Summarize and log module processing failures.
 
@@ -44,7 +41,7 @@ def _summarize_and_log_failures(failures: Iterable[tuple[Path, Exception]]) -> N
         return
 
     # ----- console summary -----
-    ok = "unknown"  # replace with real count if you track total modules
+    ok = processed - len(failures)
     print(f"\n✓ {ok} modules updated   |   ✗ {len(failures)} failed")
     print("See failed_modules.json for details.")
 
@@ -87,6 +84,7 @@ def run_pipeline(
     """
     validator = schema_loader.VALIDATOR
     failures: list[tuple[Path, Exception]] = []
+    processed = 0
 
     for raw_path in tqdm(paths, desc="Paths", unit="pkg"):
         base = Path(raw_path)
@@ -96,6 +94,7 @@ def run_pipeline(
         for path, prompt in tqdm(
             prompts.items(), desc="Modulues", unit="mod", leave=False
         ):
+            processed += 1
             resp_json = ai_client.request(prompt, model=settings.model_name)
             try:
 
@@ -105,13 +104,13 @@ def run_pipeline(
                 updated_code = services.update_module_docs(
                     old_module_source=modules[path], module_edit=module_edit
                 )
-                try:
-                    updated_code = format_str(updated_code, mode=FileMode())
-                except Exception as exc:
-                    print(f"Black formatting failed on {path}: {exc}")
+                updated_code = utils.apply_formatter(
+                    updated_code,
+                    lambda code: format_str(code, mode=FileMode()),
+                )
                 file_writer.write_file(path, updated_code, root=base)
             except Exception as exc:
                 print(f"Response JSON: {json.dumps(resp_json, indent=2)}")
                 failures.append((path, exc))
                 print(f"x {path} -> {exc}")
-    _summarize_and_log_failures(failures)
+    _summarize_and_log_failures(failures, processed)

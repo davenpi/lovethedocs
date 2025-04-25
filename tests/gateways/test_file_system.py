@@ -60,8 +60,8 @@ def test_write_file_relative_explicit_root():
         dest = project_root / "_improved" / source
         assert dest.is_file(), "destination file should exist"
         assert (
-            dest.read_text(encoding="utf-8") == code + "\n"
-        ), "file should end with exactly one newline"
+            dest.read_text(encoding="utf-8") == code
+        ), "file content should match the original code"
 
 
 def test_write_file_absolute_under_root():
@@ -77,8 +77,8 @@ def test_write_file_absolute_under_root():
 
         dest = project_root / "_improved" / "pkg" / "beta.py"
         assert (
-            dest.read_text() == "x = 1\n"
-        ), "write_file should collapse multiple newlines to one"
+            dest.read_text() == "x = 1\n\n"
+        ), "Output file should match the original code"
 
 
 def test_write_file_absolute_outside_root_raises():

@@ -73,4 +73,4 @@ def write_file(path: str | Path, code: str, root: Path | None = None) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
 
     # Ensure a single trailing newline; many tools expect it
-    dest.write_text(code.rstrip() + "\n", encoding="utf-8")
+    dest.write_text(code, encoding="utf-8")
