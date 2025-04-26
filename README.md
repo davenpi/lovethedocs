@@ -1,71 +1,175 @@
-# lovethedocs
+# LoveTheDocs
 
-## Why?
+Automatically enhance Python docstrings with AI to make your code more understandable, maintainable, and useful.
 
-Love the docs is a project to make it easier to understand software packages and APIs.
+## 🌟 Why LoveTheDocs?
 
-It's hard to understand how to use a new piece of software. It's often made
-unecessarily complex by out of date or incomplete documentation. Eventually, with
-persistence, we figure out how a project works by reading the source, looking through
-GitHub issues, or developing enough understanding to realize that the authors just
-haven't reviewed the documentation in a while.
+Good documentation is essential for two key reasons:
 
-There are 27 million software developers in the world. Let's say that in a year
-each of them spends a single hour in an unnecessary state of confusion because of
-unclear documentation. That's 27 million hours. That's three thousand calendar years of
-collective confusion. In monetary terms, assuming a global hourly rate of $30/hr,
-that's $810 million dollars every year.
+1. **Developer Experience**: Quality documentation leads to higher quality code written in less time. Developers spend less time figuring out how libraries work and more time building.
 
-Let's show the docs some love!
+2. **AI Integration**: LLMs are increasingly important consumers of documentation. The quality of AI assistance depends directly on the quality of the documentation it reads.
 
-## What should it look like?
+## 🚀 Quick Start
 
-It seems obvioius that LLMs can help us solve this problem. I will take that as an
-assumption.
+LoveTheDocs is not yet available on PyPI. To use it:
 
-In the long run I think this project should basically be an autonomous system that
-visits software packages, gets the code, ensures the code works by running it in it's
-own environment, and makes clarity updates to the documentation. The system will
-periodically do this or be integrated directly into the workflow when new commits
-are made to the repo (continuous integration).
+1. Clone the repository:
 
-## What is a first step in that direction?
+   ```bash
+   git clone https://github.com/davenpi/lovethedocs.git
+   cd lovethedocs
+   ```
 
-The full system will take time, but I think the first few steps are clear.
+2. Install dependencies:
 
-- Edit a single file
-- Edit the files that file imports
-- Continue until we have covered the entire codebase
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## What challenges do I foresee?
+3. Set up your OpenAI API key:
 
-I think the LLMs are quite capable. The general challenge will be managing the context
-window and ensuring that, on large codebases, the system doesn't need to keep the
-entire codebase in context.
+   ```bash
+   # Create a .env file in the project root
+   echo "OPENAI_API_KEY=your-api-key-here" > .env
+   ```
 
-Ultimately it would be nice to suggest improvements based on a "global view" of the
-project, but I don't know how to start there.
+4. Run LoveTheDocs on your Python project:
 
-## Imagined Usage
+   ```bash
+   # Using the provided alias (recommended)
+   source .aliases
+   lovethedocs path/to/your/python/code
 
-### Install
+   # Or run directly
+   python -m src.cli.lovethedocs path/to/your/python/code
+   ```
 
-`pip install lovethedocs`
+5. Find improved documentation in the `_improved` directory.
 
-### Optionally configure behavior
+## 🔍 How It Works
 
-Setting tone or comment style though I think the LLM will pick up on most of this
-itself.
+LoveTheDocs:
 
-### Run
+1. Analyzes your Python codebase
+2. Extracts class and function information
+3. Uses AI (OpenAI's GPT-4) to generate improved docstrings in NumPy style
+4. Updates your code with the enhanced documentation
+5. Formats the result with Black
 
-`lovethedocs .`
+The result is consistent, comprehensive documentation without manual effort.
 
-### Result
+## 🎯 Example
 
-Beautiful docs.
+Before:
 
-### Misc
+```python
+def process_data(data, threshold):
+    # Process data according to threshold
+    result = []
+    for item in data:
+        if item > threshold:
+            result.append(item * 2)
+    return result
+```
 
-Aliases are defined in a `.aliases` file. They are merely for convenience. Run
-`source .aliases` to activate them.
+After:
+
+```python
+def process_data(data: list, threshold: float) -> list:
+    """
+    Filter and transform data based on a threshold value.
+
+    Parameters
+    ----------
+    data : list
+        The input data list to process.
+    threshold : float
+        Values above this threshold will be processed.
+
+    Returns
+    -------
+    list
+        A new list containing doubled values of items that exceeded the threshold.
+    """
+    result = []
+    for item in data:
+        if item > threshold:
+            result.append(item * 2)
+    return result
+```
+
+## 🛣️ Development Roadmap
+
+Our prioritized development checklist focuses on the following areas:
+
+### Foundation (Current Focus)
+
+#### User Experience Improvements
+
+- [ ] Add asynchronous model requests for faster processing
+- [ ] Create scripts to automatically view and incorporate diffs
+- [ ] Improve CLI interface with progress indication and better error handling
+- [ ] Add support for configuration files to customize behavior
+
+#### Architecture Enhancements
+
+- [ ] Refactor to handle large codebases efficiently
+- [ ] Add support for multiple model providers (local models, Anthropic, etc.)
+- [ ] Implement adaptable documentation style templates
+- [ ] Improve module and package level documentation generation
+
+#### Evaluation and Telemetry
+
+- [ ] Create model evaluation pipeline to measure documentation quality
+- [ ] Iteratively refine prompting strategies based on quality metrics
+- [ ] Build telemetry system to track usage patterns and failure modes
+- [ ] Implement logging infrastructure for systematic performance analysis
+- [ ] Develop feedback mechanisms to improve future documentation
+
+#### Automation and Integration
+
+- [ ] Build GitHub action for automated documentation improvements
+- [ ] Create PR system for seamless code improvement integration
+- [ ] Add continuous integration hooks
+
+### Future Directions
+
+#### AI-Optimized Documentation
+
+- [ ] Research and develop documentation formats specifically designed for LLM consumption
+- [ ] Create exporters for compact schema representations of docstrings
+- [ ] Implement dual-format documentation that serves both human and AI readers
+- [ ] Build tools to analyze documentation information density and LLM comprehension
+
+#### Documentation Quality Assurance
+
+- [ ] Integrate doctest validation for all code examples
+- [ ] Implement automated repair of failing examples in documentation
+- [ ] Create validation pipelines for documentation correctness and completeness
+- [ ] Develop metrics for documentation quality beyond traditional coverage
+
+## 🧰 Technical Details
+
+LoveTheDocs uses a clean architecture with:
+
+- Domain models for documentation edits
+- LibCST for code manipulation (no regex parsing!)
+- OpenAI GPT-4 with a specialized prompting strategy
+- Dependency injection for testability
+
+## 👥 Contributing
+
+Contributions to LoveTheDocs are welcome! The project is in its early stages, and I'm
+still figuring out the contribution process. If you're interested in contributing:
+
+- Open an issue to discuss ideas or report bugs
+- Submit pull requests for small fixes
+- For larger features, please reach out to me first at davenport.ianc@gmail.com
+
+Thanks!
+
+## 📄 License
+
+This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file
+for details.

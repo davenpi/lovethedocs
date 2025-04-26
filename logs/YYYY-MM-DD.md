@@ -2,11 +2,11 @@
 
 ### What I changed
 
-- Bullet list (code, schema, infra)
+1. Number list (code, schema, infra)
 
 ### Why it matters
 
-- One sentence per bullet
+1. One sentence per number
 
 ### Measurements
 
