@@ -5,7 +5,7 @@ Glue code to run the pipeline.
 import json
 import logging
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Iterable, Sequence, Union
 
 from black import FileMode, format_str
 from tqdm import tqdm
@@ -59,7 +59,7 @@ def _summarize_and_log_failures(
 
 # ------- main pipeline function ---------------------------------------------
 def run_pipeline(
-    paths: Sequence[str],
+    paths: Union[str, Path, Sequence[Union[str, Path]]],
     *,
     settings: config.Settings = config.Settings(),
     ai_client: ports.AIClientPort = ai_gateway,
@@ -84,13 +84,28 @@ def run_pipeline(
         File writer port for loading and writing modules (default is the file system
         gateway).
     """
+    # ––– normalise to a list –––
+    if isinstance(paths, (str, Path)):
+        paths = [paths]  # type: ignore[assignment]
+
     validator = schema_loader.VALIDATOR
     failures: list[tuple[Path, Exception]] = []
     processed = 0
 
     for raw_path in tqdm(paths, desc="Paths", unit="pkg"):
-        base = Path(raw_path)
-        modules = file_writer.load_modules(base)
+        p = Path(raw_path)
+        # ─── directory: current behaviour ───
+        if p.is_dir():
+            base = p
+            modules = file_writer.load_modules(base)
+        # ─── single .py file ───
+        elif p.is_file() and p.suffix == ".py":
+            base = p.parent  # keep same root-relative convention
+            modules = {p.relative_to(base): p.read_text(encoding="utf-8")}
+        else:
+            logging.warning(f"Skipping {p} (not a directory or .py file)")
+            continue
+
         prompts = prompt_builder.build_prompts(modules)
 
         for path, prompt in tqdm(
