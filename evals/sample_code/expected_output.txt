@@ -1,5 +1,0 @@
-BEGIN lovethedocs hello.py
-```python
-print("Hello, world!")
-```
-END lovethedocs hello.py
