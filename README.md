@@ -54,11 +54,11 @@ LoveTheDocs:
 
 1. Analyzes your Python codebase
 2. Extracts class and function information
-3. Uses AI (OpenAI's GPT-4) to generate improved docstrings in NumPy style
+3. Uses AI (for now Open AI models) to generate improved docstrings in NumPy style
 4. Updates your code with the enhanced documentation
-5. Formats the result with Black
+5. Formats the result with black
 
-The result is consistent, comprehensive documentation without manual effort.
+The result is consistent, comprehensive documentation with a lot less effort.
 
 ## 🎯 Example
 
@@ -101,8 +101,6 @@ def process_data(data: list, threshold: float) -> list:
 ```
 
 ## 🛣️ Development Roadmap
-
-Our prioritized development checklist focuses on the following areas:
 
 ### Foundation (Current Focus)
 
