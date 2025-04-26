@@ -1,6 +1,6 @@
 # LoveTheDocs
 
-Enhance Python docstrings with AI to make your code more understandable, maintainable,
+Enhance Python docs with AI to make your code more understandable, maintainable,
 and useful.
 
 ## 🌟 Why LoveTheDocs?
