@@ -1,6 +1,7 @@
 # LoveTheDocs
 
-Automatically enhance Python docstrings with AI to make your code more understandable, maintainable, and useful.
+Enhance Python docstrings with AI to make your code more understandable, maintainable,
+and useful.
 
 ## 🌟 Why LoveTheDocs?
 
@@ -114,9 +115,9 @@ Our prioritized development checklist focuses on the following areas:
 
 #### Architecture Enhancements
 
-- [ ] Refactor to handle large codebases efficiently
-- [ ] Add support for multiple model providers (local models, Anthropic, etc.)
-- [ ] Implement adaptable documentation style templates
+- [ ] Improve core/domain logic. Extend domain services for clarity.
+- [ ] Add support for multiple model providers (Anthropic + Open AI)
+- [ ] Implement adaptable documentation style templates (NumPy vs. Google)
 - [ ] Improve module and package level documentation generation
 
 #### Evaluation and Telemetry
