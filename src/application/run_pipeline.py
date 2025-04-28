@@ -1,6 +1,16 @@
 """
-Glue code to run the pipeline.
+Glue code to run the documentation-update pipeline.
+
+The file is now a *thin adapter*: all business logic lives in domain
+services and the DocumentationUpdateUseCase.  This module only
+
+    • normalises incoming paths,
+    • loads / writes files through gateway ports,
+    • feeds data into the use-case,
+    • shows progress bars and a final summary.
 """
+
+from __future__ import annotations
 
 import json
 import logging
@@ -11,61 +21,69 @@ from black import FileMode, format_str
 from tqdm import tqdm
 
 from src import ports
-
-from src.gateways import schema_loader
-from src.application import config, mappers, services, utils
-from src.application import logging_setup  # noqa: F401  (import side-effects only)
+from src.application import config, logging_setup  # side-effects only
 from src.application.diff_review import batch_review
+from src.application import utils
+from src.gateways import openai_client, schema_loader
+from src.application import mappers
+from src.gateways import file_system as fs_gateway
+from src.gateways import openai_client as ai_gateway
+from src.gateways import schema_loader
+
 from src.domain.docstyle.numpy_style import NumPyDocStyle
 from src.domain.models import SourceModule
 from src.domain.services import PromptBuilder
 from src.domain.templates import PromptTemplateRepository
-from src.gateways import file_system as fs_gateway
-from src.gateways import openai_client as ai_gateway
+from src.domain.use_cases.update_docs import (
+    DocumentationUpdateUseCase,
+)
+from src.domain.services.generator import DocstringGeneratorService
+from src.domain.services.patcher import ModulePatcher
+
+# --------------------------------------------------------------------------- #
+#  One-time construction of the pure, stateless services                      #
+# --------------------------------------------------------------------------- #
 
 
-builder = PromptBuilder(PromptTemplateRepository())
+generator = DocstringGeneratorService(
+    client=openai_client,
+    validator=schema_loader.VALIDATOR,
+    mapper=mappers.map_json_to_module_edit,
+    style=NumPyDocStyle(),
+)
+_BUILDER = PromptBuilder(PromptTemplateRepository())
+_USES = DocumentationUpdateUseCase(
+    builder=_BUILDER,
+    generator=generator,
+    patcher=ModulePatcher(),
+)
 
 
-def _summarize_and_log_failures(
+# --------------------------------------------------------------------------- #
+#  Helpers                                                                    #
+# --------------------------------------------------------------------------- #
+def _summarize_failures(
     failures: Iterable[tuple[Path, Exception]], processed: int
 ) -> None:
-    """
-    Summarize and log failures encountered during module processing.
-
-    Prints a summary of successful and failed modules to the console, writes details of
-    failures to 'failed_modules.json', and logs full exception tracebacks to 'pipeline.log'.
-    If there are no failures, prints a success message.
-
-    Parameters
-    ----------
-    failures : Iterable[tuple[Path, Exception]]
-        An iterable of (Path, Exception) tuples representing failed modules and their
-        associated exceptions.
-    processed : int
-        The total number of modules processed.
-    """
-    failures = list(failures)  # exhaust any iterator
+    failures = list(failures)
     if not failures:
         print("✓ All modules processed without errors.")
         return
 
-    # ----- console summary -----
     ok = processed - len(failures)
     print(f"\n✓ {ok} modules updated   |   ✗ {len(failures)} failed")
     print("See failed_modules.json for details.")
 
-    # ----- JSON dump -----
-    payload = [{"module": str(path), "error": str(exc)} for path, exc in failures]
-    with open("failed_modules.json", "w", encoding="utf-8") as fh:
-        json.dump(payload, fh, indent=2)
+    payload = [{"module": str(p), "error": str(e)} for p, e in failures]
+    Path("failed_modules.json").write_text(json.dumps(payload, indent=2))
 
-    # ----- full tracebacks in log -----
-    for path, exc in failures:
-        logging.exception("Failure in %s", path, exc_info=exc)
+    for p, e in failures:
+        logging.exception("Failure in %s", p, exc_info=e)
 
 
-# ------- main pipeline function ---------------------------------------------
+# --------------------------------------------------------------------------- #
+#  Public adapter                                                             #
+# --------------------------------------------------------------------------- #
 def run_pipeline(
     paths: Union[str, Path, Sequence[Union[str, Path]]],
     *,
@@ -73,95 +91,75 @@ def run_pipeline(
     ai_client: ports.AIClientPort = ai_gateway,
     file_writer: ports.FileWriterPort = fs_gateway,
     review_diffs: bool = False,
-):
+) -> None:
     """
-    Run the documentation update pipeline for a sequence of module paths.
-
-    Loads modules, builds prompts, requests AI-generated documentation edits, validates
-    responses, updates module files, and logs any failures. At the end, writes a summary of
-    failures.
+    High-level CLI entry: update documentation for every `.py` file
+    under the given path(s).
 
     Parameters
     ----------
-    paths : Sequence[str]
-        A sequence of string paths to the codebase roots to process.
-    settings : config.Settings, optional
-        Pipeline configuration settings (default is a new Settings instance).
-    ai_client : ports.AIClientPort, optional
-        AI client port for making requests (default is the OpenAI gateway).
-    file_writer : ports.FileWriterPort, optional
-        File writer port for loading and writing modules (default is the file system
-        gateway).
+    paths
+        Directory, single file, or a sequence of both.
+    settings
+        Model name, temperature, etc.
+    ai_client
+        Gateway that speaks to the LLM (defaults to OpenAI wrapper).
+    file_writer
+        Gateway that loads and writes files on disk.
+    review_diffs
+        If True, open VS Code diff view when finished.
     """
-    # ––– normalise to a list –––
     if isinstance(paths, (str, Path)):
-        paths = [paths]  # type: ignore[assignment]
+        paths = [paths]  # type: ignore[list-item]
 
     validator = schema_loader.VALIDATOR
     failures: list[tuple[Path, Exception]] = []
     processed = 0
 
-    for raw_path in tqdm(paths, desc="Paths", unit="pkg"):
-        p = Path(raw_path)
-        # ─── directory: current behaviour ───
-        if p.is_dir():
-            base = p
-            modules = file_writer.load_modules(base)
-        # ─── single .py file ───
-        elif p.is_file() and p.suffix == ".py":
-            base = p.parent  # keep same root-relative convention
-            modules = {p.relative_to(base): p.read_text(encoding="utf-8")}
+    for raw in tqdm(paths, desc="Paths", unit="pkg"):
+        root = Path(raw)
+
+        # ----- load modules -------------------------------------------------
+        if root.is_dir():
+            module_map = file_writer.load_modules(root)
+        elif root.is_file() and root.suffix == ".py":
+            module_map = {root.relative_to(root.parent): root.read_text("utf-8")}
+            root = root.parent
         else:
-            logging.warning(f"Skipping {p} (not a directory or .py file)")
+            logging.warning("Skipping %s (not a directory or .py file)", root)
             continue
 
-        src_modules = [
-            SourceModule(path=Path(p), code=code) for p, code in modules.items()
-        ]
-        prompts = builder.build(src_modules, style=NumPyDocStyle())
+        src_modules = [SourceModule(p, code) for p, code in module_map.items()]
 
-        for path, prompt in tqdm(
-            prompts.items(), desc="Modulues", unit="mod", leave=False
-        ):
+        # ----- call domain use-case ----------------------------------------
+        try:
+            updates = _USES.run(src_modules, style=NumPyDocStyle())
+        except NotImplementedError:
+            print("⚠  Generator/Patcher stubs are in place; skipping update step.")
+            continue
+
+        for mod, new_code in tqdm(updates, desc="Modules", unit="mod", leave=False):
             processed += 1
-            resp_json = ai_client.request(
-                prompt,
-                style="numpy",
-                model=settings.model_name,
-            )
             try:
+                # until real generator lands, new_code will be str|dict
+                if isinstance(new_code, dict):
+                    validator.validate(new_code)
+                    new_code = utils.update_module_docs(
+                        old_module_source=module_map[mod.path],
+                        module_edit=new_code,
+                    )
 
-                validator.validate(resp_json)
-
-                module_edit = mappers.map_json_to_module_edit(resp_json)
-                # The keys in `modules` may be `str` (loader) or `Path` (single‑file branch).
-                # Resolve whichever variant is present so we don't crash on a KeyError.
-                key = path if path in modules else str(path)
-                try:
-                    old_src = modules[key]
-                except KeyError:  # unexpected mismatch
-                    raise KeyError(f"Module map missing entry for {path!r}") from None
-
-                updated_code = services.update_module_docs(
-                    old_module_source=old_src, module_edit=module_edit
+                new_code = utils.apply_formatter(
+                    new_code, lambda s: format_str(s, mode=FileMode())
                 )
-                updated_code = utils.apply_formatter(
-                    updated_code,
-                    lambda code: format_str(code, mode=FileMode()),
-                )
-                file_writer.write_file(path, updated_code, root=base)
+                file_writer.write_file(mod.path, new_code, root=root)
             except Exception as exc:
-                print(f"Response JSON: {json.dumps(resp_json, indent=2)}")
-                failures.append((path, exc))
-                print(f"x {path} -> {exc}")
-    _summarize_and_log_failures(failures, processed)
+                failures.append((mod.path, exc))
+                print(f"x {mod.path} -> {exc}")
+
+    _summarize_failures(failures, processed)
+
     if review_diffs:
-
-        print("\nReviewing generated documentation...")
-
-        # Handle both single paths and sequences
-        if isinstance(paths, (str, Path)):
-            batch_review(paths)
-        else:
-            for raw_path in paths:
-                batch_review(raw_path)
+        print("\nReviewing generated documentation…")
+        for p in paths if isinstance(paths, Sequence) else [paths]:
+            batch_review(p)
