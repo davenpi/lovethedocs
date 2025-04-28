@@ -5,7 +5,7 @@ and useful.
 
 ## 🌟 Why LoveTheDocs?
 
-Good documentation is essential for two key reasons:
+Good documentation is essential for at least two reasons:
 
 1. **Developer Experience**: Quality documentation leads to higher quality code written in less time. Developers spend less time figuring out how libraries work and more time building.
 
