@@ -11,12 +11,20 @@ from black import FileMode, format_str
 from tqdm import tqdm
 
 from src import ports
-from src.gateways import file_system as fs_gateway
-from src.gateways import openai_client as ai_gateway
+
 from src.gateways import schema_loader
-from src.application import config, mappers, prompt_builder, services, utils
+from src.application import config, mappers, services, utils
 from src.application import logging_setup  # noqa: F401  (import side-effects only)
 from src.application.diff_review import batch_review
+from src.domain.docstyle.numpy_style import NumPyDocStyle
+from src.domain.models import SourceModule
+from src.domain.services import PromptBuilder
+from src.domain.templates import PromptTemplateRepository
+from src.gateways import file_system as fs_gateway
+from src.gateways import openai_client as ai_gateway
+
+
+builder = PromptBuilder(PromptTemplateRepository())
 
 
 def _summarize_and_log_failures(
@@ -107,7 +115,10 @@ def run_pipeline(
             logging.warning(f"Skipping {p} (not a directory or .py file)")
             continue
 
-        prompts = prompt_builder.build_prompts(modules)
+        src_modules = [
+            SourceModule(path=Path(p), code=code) for p, code in modules.items()
+        ]
+        prompts = builder.build(src_modules, style=NumPyDocStyle())
 
         for path, prompt in tqdm(
             prompts.items(), desc="Modulues", unit="mod", leave=False
@@ -123,8 +134,16 @@ def run_pipeline(
                 validator.validate(resp_json)
 
                 module_edit = mappers.map_json_to_module_edit(resp_json)
+                # The keys in `modules` may be `str` (loader) or `Path` (single‑file branch).
+                # Resolve whichever variant is present so we don't crash on a KeyError.
+                key = path if path in modules else str(path)
+                try:
+                    old_src = modules[key]
+                except KeyError:  # unexpected mismatch
+                    raise KeyError(f"Module map missing entry for {path!r}") from None
+
                 updated_code = services.update_module_docs(
-                    old_module_source=modules[path], module_edit=module_edit
+                    old_module_source=old_src, module_edit=module_edit
                 )
                 updated_code = utils.apply_formatter(
                     updated_code,

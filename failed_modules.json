@@ -1,0 +1,6 @@
+[
+  {
+    "module": "bye.py",
+    "error": "PosixPath('bye.py')"
+  }
+]
