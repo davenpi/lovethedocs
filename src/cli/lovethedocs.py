@@ -11,8 +11,9 @@ def main() -> None:
     """
     Parse command-line arguments and run the documentation pipeline.
 
-    This function sets up the argument parser, collects the paths to be documented, and
-    invokes the pipeline to process the specified directories.
+    This function sets up the argument parser, collects the paths to be documented,
+    and invokes the pipeline to process the specified directories or files. Additional
+    options control diff review.
 
     Returns
     -------
@@ -23,11 +24,20 @@ def main() -> None:
     parser.add_argument(
         "paths",
         nargs="+",
-        help="One or more directories whose Python files should be documented.",
+        help="One or more directories or files whose code should be documented.",
+    )
+    parser.add_argument(
+        "--review",
+        action="store_true",
+        help="Open diffs for review after processing",
     )
     args = parser.parse_args()
+
     print("Running pipeline with paths:", args.paths)
-    run_pipeline.run_pipeline(args.paths)
+    run_pipeline.run_pipeline(
+        args.paths,
+        review_diffs=args.review,
+    )
 
 
 if __name__ == "__main__":

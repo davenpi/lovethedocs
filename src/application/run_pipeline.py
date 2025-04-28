@@ -11,12 +11,12 @@ from black import FileMode, format_str
 from tqdm import tqdm
 
 from src import ports
-from src.application import config, mappers, prompt_builder, services, utils
-from src.application import logging_setup  # noqa: F401  (import side-effects only)
-
 from src.gateways import file_system as fs_gateway
 from src.gateways import openai_client as ai_gateway
 from src.gateways import schema_loader
+from src.application import config, mappers, prompt_builder, services, utils
+from src.application import logging_setup  # noqa: F401  (import side-effects only)
+from src.application.diff_review import batch_review
 
 
 def _summarize_and_log_failures(
@@ -64,6 +64,7 @@ def run_pipeline(
     settings: config.Settings = config.Settings(),
     ai_client: ports.AIClientPort = ai_gateway,
     file_writer: ports.FileWriterPort = fs_gateway,
+    review_diffs: bool = False,
 ):
     """
     Run the documentation update pipeline for a sequence of module paths.
@@ -131,3 +132,13 @@ def run_pipeline(
                 failures.append((path, exc))
                 print(f"x {path} -> {exc}")
     _summarize_and_log_failures(failures, processed)
+    if review_diffs:
+
+        print("\nReviewing generated documentation...")
+
+        # Handle both single paths and sequences
+        if isinstance(paths, (str, Path)):
+            batch_review(paths)
+        else:
+            for raw_path in paths:
+                batch_review(raw_path)

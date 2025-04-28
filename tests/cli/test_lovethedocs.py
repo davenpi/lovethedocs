@@ -14,7 +14,7 @@ def test_cli_main_invokes_pipeline(monkeypatch):
 
     called = {}
 
-    def fake_run(paths):
+    def fake_run(paths, review_diffs=False):
         called["paths"] = paths
 
     monkeypatch.setattr("src.cli.lovethedocs.run_pipeline.run_pipeline", fake_run)
