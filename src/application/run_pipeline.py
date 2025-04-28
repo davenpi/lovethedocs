@@ -113,7 +113,11 @@ def run_pipeline(
             prompts.items(), desc="Modulues", unit="mod", leave=False
         ):
             processed += 1
-            resp_json = ai_client.request(prompt, model=settings.model_name)
+            resp_json = ai_client.request(
+                prompt,
+                style="numpy",
+                model=settings.model_name,
+            )
             try:
 
                 validator.validate(resp_json)

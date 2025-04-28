@@ -11,7 +11,7 @@ import src.gateways.schema_loader as sl
 
 def _stub_ai_noop():
     class DummyAI:
-        def request(self, prompt, *, model):
+        def request(self, prompt, *, model, style):
             # no edits ⇒ update_module_docs returns the original source
             return {"function_edits": [], "class_edits": []}
 
@@ -27,11 +27,6 @@ def test_run_pipeline_happy_path(tmp_path):
     - prompt_builder.build_prompts is patched to a trivial lambda.
     - schema_loader.VALIDATOR is patched to a no-op.
     """
-
-    # --- stubs that satisfy the ports --------------------------------------
-    class DummyAI:
-        def request(self, prompt, *, model):
-            return {"function_edits": [], "class_edits": []}
 
     class StubWriter:
         def __init__(self):
@@ -54,7 +49,7 @@ def test_run_pipeline_happy_path(tmp_path):
 
         run_pipeline(
             paths=[tmp_path],
-            ai_client=DummyAI(),
+            ai_client=_stub_ai_noop(),
             file_writer=writer,
         )
 

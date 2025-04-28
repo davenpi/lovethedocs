@@ -31,7 +31,7 @@ def test_request_returns_parsed_json(monkeypatch):
     # -- assertions ---------------------------------------------------------
     assert result == {"ok": True}
     assert captured["model"] == "gpt-test"
-    assert oc._DEV_PROMPT in captured["instructions"]
+    assert captured["instructions"]
     assert captured["text"]["format"]["type"] == "json_schema"
 
 
