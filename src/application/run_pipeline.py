@@ -47,7 +47,10 @@ from src.domain.services.patcher import ModulePatcher
 cfg = config.Settings()
 
 edit_generator = ModuleEditGenerator(
-    client=OpenAIClientAdapter(model=cfg.model, prompt_style=cfg.doc_style),
+    client=OpenAIClientAdapter(
+        model=cfg.model,
+        prompt_style=cfg.doc_style,
+    ),
     validator=schema_loader.VALIDATOR,
     mapper=mappers.map_json_to_module_edit,
 )
