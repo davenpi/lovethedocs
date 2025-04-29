@@ -114,7 +114,6 @@ def run_pipeline(
     if isinstance(paths, (str, Path)):
         paths = [paths]  # type: ignore[list-item]
 
-    validator = schema_loader.VALIDATOR
     failures: list[tuple[Path, Exception]] = []
     processed = 0
 
@@ -134,23 +133,12 @@ def run_pipeline(
         src_modules = [SourceModule(p, code) for p, code in module_map.items()]
 
         # ----- call domain use-case ----------------------------------------
-        try:
-            updates = _USES.run(src_modules, style=NumPyDocStyle())
-        except NotImplementedError:
-            print("⚠  Generator/Patcher stubs are in place; skipping update step.")
-            continue
+
+        updates = _USES.run(src_modules, style=NumPyDocStyle())
 
         for mod, new_code in tqdm(updates, desc="Modules", unit="mod", leave=False):
             processed += 1
             try:
-                # until real generator lands, new_code will be str|dict
-                if isinstance(new_code, dict):
-                    validator.validate(new_code)
-                    new_code = utils.update_module_docs(
-                        old_module_source=module_map[mod.path],
-                        module_edit=new_code,
-                    )
-
                 new_code = utils.apply_formatter(
                     new_code, lambda s: format_str(s, mode=FileMode())
                 )
