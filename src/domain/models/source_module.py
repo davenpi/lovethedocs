@@ -18,7 +18,7 @@ from libcst import metadata
 @dataclass(frozen=True)
 class SourceModule:
     """
-    Immutable snapshot of a file’s source code.
+    Immutable snapshot of a file's source code.
 
     Parameters
     ----------

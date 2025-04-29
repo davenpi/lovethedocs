@@ -8,11 +8,9 @@ domain - no imports from the application layer.
 
 from __future__ import annotations
 
-from typing import Dict, Mapping
 import textwrap
 
 import libcst as cst
-from libcst import metadata
 
 from src.domain.models import ModuleEdit, FunctionEdit, ClassEdit
 
