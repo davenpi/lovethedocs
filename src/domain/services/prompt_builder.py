@@ -54,7 +54,7 @@ class PromptBuilder:
 
         for mod in modules:
             header = (
-                "### Objects in this file:\n"
+                f"### Objects in {mod.path}:\n"
                 + "\n".join(f"  {qn}" for qn in mod.objects)
                 + "\n\n"
             )

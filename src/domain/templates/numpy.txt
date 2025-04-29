@@ -28,7 +28,7 @@ content**—no surrounding quotes or indentation.
 - When the source code is unclear, infer intent conservatively rather than invent.
 
 ### 4 — Output examples  
-*(All examples are shown **exactly** as the model should output them inside the
+*(All examples are shown **exactly** as you should output them inside the
 JSON—not in triple quotes, not indented.)*
 
 **Example A - A good response**
