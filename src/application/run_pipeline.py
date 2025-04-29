@@ -24,10 +24,10 @@ from src import ports
 from src.application import config, logging_setup  # side-effects only
 from src.application.diff_review import batch_review
 from src.application import utils
-from src.gateways import openai_client, schema_loader
+from src.gateways import schema_loader
+from src.gateways.openai_client import OpenAIClientAdapter
 from src.application import mappers
 from src.gateways import file_system as fs_gateway
-from src.gateways import openai_client as ai_gateway
 from src.gateways import schema_loader
 
 from src.domain.docstyle.numpy_style import NumPyDocStyle
@@ -45,16 +45,20 @@ from src.domain.services.patcher import ModulePatcher
 # --------------------------------------------------------------------------- #
 
 
-generator = DocstringGeneratorService(
-    client=openai_client,
+def openai_factory(style: str):
+    return OpenAIClientAdapter(style=style)  # <- style locked in
+
+
+numpy_generator = DocstringGeneratorService(
+    style="numpy",
+    client_factory=openai_factory,
     validator=schema_loader.VALIDATOR,
     mapper=mappers.map_json_to_module_edit,
-    style=NumPyDocStyle(),
 )
 _BUILDER = PromptBuilder(PromptTemplateRepository())
 _USES = DocumentationUpdateUseCase(
     builder=_BUILDER,
-    generator=generator,
+    generator=numpy_generator,
     patcher=ModulePatcher(),
 )
 
@@ -87,8 +91,6 @@ def _summarize_failures(
 def run_pipeline(
     paths: Union[str, Path, Sequence[Union[str, Path]]],
     *,
-    settings: config.Settings = config.Settings(),
-    ai_client: ports.AIClientPort = ai_gateway,
     file_writer: ports.FileWriterPort = fs_gateway,
     review_diffs: bool = False,
 ) -> None:

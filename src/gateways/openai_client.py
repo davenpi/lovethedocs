@@ -1,117 +1,93 @@
 """
-Tiny wrapper so the rest of the code never imports openai directly.
+Concrete adapter that satisfies `LLMClientPort`.
 """
 
-from functools import lru_cache
+from __future__ import annotations
+
 import json
-import os
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from openai import OpenAI
+import os
 from dotenv import load_dotenv
+from openai import OpenAI
 
 from .schema_loader import _RAW_SCHEMA
 from src.domain.templates import PromptTemplateRepository
 
 
+# --------------------------------------------------------------------------- #
+#  One-time helpers                                                           #
+# --------------------------------------------------------------------------- #
 @lru_cache(maxsize=1)
-def _get_client() -> OpenAI:
-    """
-    Return a cached OpenAI client instance using the API key from the environment.
-
-    Uses LRU caching to ensure only one client instance is created per process.
-
-    Returns
-    -------
-    OpenAI
-        An instance of the OpenAI client initialized with the API key.
-    """
-    api_key = _get_api_key()
-    return OpenAI(api_key=api_key)
-
-
-def _get_api_key() -> str:
-    """
-    Retrieve the OpenAI API key from the environment or a .env file.
-
-    Checks the environment variable 'OPENAI_API_KEY'. If not found, attempts to load
-    it from a .env file located in the project root or its parent directory. Raises an
-    error if the key is not found.
-
-    Returns
-    -------
-    str
-        The OpenAI API key as a string.
-
-    Raises
-    ------
-    RuntimeError
-        If the API key is not found in the environment or .env file.
-    """
-    # Check if the API key is already set in the environment
+def _get_sdk_client() -> OpenAI:
     api_key = os.getenv("OPENAI_API_KEY")
-
-    if not api_key:
-        # Look for .env file in the current directory or parent directories
-        project_root = Path(__file__).resolve().parent.parent  # /abs_path/to/src
-        for candidate in [project_root / ".env", project_root.parent / ".env"]:
+    if not api_key:  # fallback → .env search
+        project_root = Path(__file__).resolve().parents[1]
+        for candidate in (project_root / ".env", project_root.parent / ".env"):
             if candidate.exists():
-                load_dotenv(candidate)  # Load the .env file into the environment
+                load_dotenv(candidate)
                 api_key = os.getenv("OPENAI_API_KEY")
                 break
     if not api_key:
         raise RuntimeError(
-            "OPENAI_API_KEY not found. "
-            "Set it in the environment or in a .env file at project root."
+            "OPENAI_API_KEY not found in env or .env file at project root."
         )
-    return api_key
+    return OpenAI(api_key=api_key)
 
 
-_prompt_template_repo = PromptTemplateRepository()
+_PROMPTS = PromptTemplateRepository()  # cache inside class below
 
 
-def request(
-    source_prompt: str,
-    *,
-    style: str = "numpy",
-    model: str = "gpt-4.1",
-) -> dict[str, Any]:
+# --------------------------------------------------------------------------- #
+#  Adapter                                                                     #
+# --------------------------------------------------------------------------- #
+class OpenAIClientAdapter:
     """
-    Send a prompt to the OpenAI API and return the parsed JSON response.
+    Concrete implementation of `LLMClientPort`.
 
-    Uses the specified model to generate a response according to the developer prompt
-    and schema. The response is parsed from JSON and returned as a dictionary.
-
-    Parameters
-    ----------
-    source_prompt : str
-        The user prompt to send to the OpenAI API.
-    model : str, optional
-        The model name to use for the request (default is 'gpt-4.1').
-
-    Returns
-    -------
-    dict[str, Any]
-        The parsed JSON response from the OpenAI API.
+    The doc-style is chosen *once* at construction; callers never pass it again.
     """
-    client = _get_client()
-    dev_prompt = _prompt_template_repo.get(style)
-    response = client.responses.create(
-        model=model,
-        instructions=dev_prompt,
-        input=[
-            {"role": "user", "content": source_prompt},
-        ],
-        text={
-            "format": {
-                "type": "json_schema",
-                "name": "code_documentation_edits",
-                "schema": _RAW_SCHEMA,
-                "strict": True,
-            }
-        },
-        temperature=0,
-    )
-    response_json = json.loads(response.output_text)
-    return response_json
+
+    def __init__(self, *, style: str = "numpy", model: str = "gpt-4.1") -> None:
+        self._dev_prompt = _PROMPTS.get(style)
+        self._model = model
+        self._client = _get_sdk_client()
+
+    # This satisfies the (style-free) port
+    def request(self, prompt: str) -> dict[str, Any]:
+        response = self._client.responses.create(
+            model=self._model,
+            instructions=self._dev_prompt,
+            input=[{"role": "user", "content": prompt}],
+            text={
+                "format": {
+                    "type": "json_schema",
+                    "name": "code_documentation_edits",
+                    "schema": _RAW_SCHEMA,
+                    "strict": True,
+                }
+            },
+            temperature=0,
+        )
+        return json.loads(response.output_text)
+
+    @classmethod
+    def from_config(cls, config: dict[str, str]) -> OpenAIClientAdapter:
+        """
+        Create an instance of OpenAIClientAdapter from a configuration dictionary.
+
+        Parameters
+        ----------
+        config : dict[str, str]
+            A dictionary containing the configuration parameters for the adapter.
+
+        Returns
+        -------
+        OpenAIClientAdapter
+            An instance of OpenAIClientAdapter configured with the provided parameters.
+        """
+        style = config.get("style", "numpy")
+        model = config.get("model", "gpt-4.1")
+        return cls(style=style, model=model)

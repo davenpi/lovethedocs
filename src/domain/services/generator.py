@@ -18,13 +18,13 @@ from src.domain.models import ModuleEdit
 #  Ports (minimal)                                                            #
 # --------------------------------------------------------------------------- #
 class LLMClientPort(Protocol):
-    """The only method the generator cares about."""
+    """Anything that can turn a prompt into JSON."""
 
-    def request(self, prompt: str, *, style: str) -> dict:  # noqa: D401
+    def request(self, prompt: str) -> dict:  # noqa: D401
         ...
 
 
-class JSONValidator(Protocol):
+class JSONSchemaValidator(Protocol):
     """Anything with .validate(raw_json) that raises on failure."""
 
     def validate(self, raw_json: dict) -> None:  # noqa: D401
@@ -32,10 +32,10 @@ class JSONValidator(Protocol):
 
 
 # --------------------------------------------------------------------------- #
-#  Mapper                                                                     #
+#  Type aliases                                                               #
 # --------------------------------------------------------------------------- #
-# Type alias so callers can inject existing mappers.map_json_to_module_edit
 JSONToEditMapper = Callable[[dict], ModuleEdit]
+LLMClientFactory = Callable[[str], LLMClientPort]  # factory(style) -> LLMClientPort
 
 
 # --------------------------------------------------------------------------- #
@@ -43,36 +43,29 @@ JSONToEditMapper = Callable[[dict], ModuleEdit]
 # --------------------------------------------------------------------------- #
 class DocstringGeneratorService:
     """
-    Coordinates model call + schema validation + mapping to `ModuleEdit`.
+    A *style-specific* generator.
+
+    The chosen style is visible as `.style` and is passed once to the client
+    factory when the service is constructed.
     """
 
     def __init__(
         self,
         *,
-        client: LLMClientPort,
-        validator: JSONValidator,
+        style: str,
+        client_factory: LLMClientFactory,
+        validator: JSONSchemaValidator,
         mapper: JSONToEditMapper,
-        style: DocStyle,
     ) -> None:
-        self._client = client
+        self.style = style
+        self._client = client_factory(style)  # binds style inside adapter
         self._validator = validator
         self._mapper = mapper
-        self._style = style
 
     # ------------------------------------------------------------------ #
     #  Public API                                                         #
     # ------------------------------------------------------------------ #
     def generate(self, prompt: str) -> ModuleEdit:
-        """
-        Return a fully-typed `ModuleEdit`, or propagate any errors.
-
-        Raises
-        ------
-        ValidationError
-            If the JSON schema check fails (comes from validator).
-        Exception
-            Any exception bubble-ups from the client port.
-        """
-        raw = self._client.request(prompt, style=self._style.name)
+        raw = self._client.request(prompt)
         self._validator.validate(raw)
         return self._mapper(raw)
