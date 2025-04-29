@@ -35,7 +35,6 @@ class JSONSchemaValidator(Protocol):
 #  Type aliases                                                               #
 # --------------------------------------------------------------------------- #
 JSONToEditMapper = Callable[[dict], ModuleEdit]
-LLMClientFactory = Callable[[str], LLMClientPort]  # factory(style) -> LLMClientPort
 
 
 # --------------------------------------------------------------------------- #
@@ -52,15 +51,14 @@ class ModuleEditGenerator:
     def __init__(
         self,
         *,
-        style: str,
-        client_factory: LLMClientFactory,
+        client: LLMClientPort,
         validator: JSONSchemaValidator,
         mapper: JSONToEditMapper,
     ) -> None:
-        self.style = style
-        self._client = client_factory(style)  # binds style inside adapter
+        self._client = client
         self._validator = validator
         self._mapper = mapper
+        self.style: str = getattr(client, "style", "<unknown>")
 
     # ------------------------------------------------------------------ #
     #  Public API                                                         #

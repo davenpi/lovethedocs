@@ -12,7 +12,7 @@ The service should
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -26,7 +26,14 @@ from src.domain.services.generator import ModuleEditGenerator
 class FakeClient:
     """Mimics the LLM adapter returned by the factory."""
 
-    def __init__(self, raw: dict | None = None, *, exc: Exception | None = None):
+    def __init__(
+        self,
+        raw: dict | None = None,
+        *,
+        exc: Exception | None = None,
+        style: str = "numpy",
+    ):
+        self.style = style
         self._raw = raw or {}
         self._exc = exc
         self.called_with: tuple[str] | None = None
@@ -62,29 +69,20 @@ def _make_service(
     validator_exc: Exception | None = None,
     mapper_ret: Any = None,
 ):
-    client = FakeClient(raw, exc=client_exc)
+    client = FakeClient(raw, exc=client_exc, style=STYLE)
     validator = FakeValidator(exc=validator_exc)
     sentinel = mapper_ret if mapper_ret is not None else ModuleEdit()
-
-    # Record how the factory is invoked
-    factory_log: Dict[str, Any] = {"count": 0, "style": None}
-
-    def factory(style: str):
-        factory_log["count"] += 1
-        factory_log["style"] = style
-        return client
 
     def mapper(data: dict) -> ModuleEdit:  # noqa: D401
         assert data is raw
         return sentinel
 
     gen = ModuleEditGenerator(
-        style=STYLE,
-        client_factory=factory,
+        client=client,
         validator=validator,
         mapper=mapper,
     )
-    return gen, client, validator, sentinel, factory_log
+    return gen, client, validator, sentinel
 
 
 # --------------------------------------------------------------------------- #
@@ -92,18 +90,17 @@ def _make_service(
 # --------------------------------------------------------------------------- #
 def test_generate_happy_path():
     raw = {"ok": True}
-    gen, client, validator, sentinel, log = _make_service(raw)
+    gen, client, validator, sentinel = _make_service(raw)
 
     out = gen.generate("PROMPT")
 
     # returns mapper output
     assert out is sentinel
-    # factory called exactly once with correct style
-    assert log == {"count": 1, "style": STYLE}
     # client called with only the prompt
     assert client.called_with == ("PROMPT",)
     # validator saw the raw JSON
     assert validator.validated is raw
+    assert gen.style == STYLE
 
 
 # --------------------------------------------------------------------------- #
@@ -112,14 +109,13 @@ def test_generate_happy_path():
 def test_generate_validator_error():
     raw = {"bad": "data"}
     err = ValueError("schema mismatch")
-    gen, client, validator, _, log = _make_service(
+    gen, client, validator, _ = _make_service(
         raw, validator_exc=err, mapper_ret=object()
     )
 
     with pytest.raises(ValueError):
         gen.generate("PROMPT")
 
-    assert log["count"] == 1
     assert validator.validated is raw
     # mapper never called, so client still called but nothing mapped
     assert client.called_with == ("PROMPT",)
@@ -129,14 +125,13 @@ def test_generate_validator_error():
 #  3 ── client exception propagates                                           #
 # --------------------------------------------------------------------------- #
 def test_generate_client_error():
-    gen, client, validator, _, log = _make_service(
+    gen, client, validator, _ = _make_service(
         raw={}, client_exc=RuntimeError("api down")
     )
 
     with pytest.raises(RuntimeError):
         gen.generate("PROMPT")
 
-    assert log["count"] == 1
     # client attempted, validator never reached
     assert client.called_with == ("PROMPT",)
     assert validator.validated is None

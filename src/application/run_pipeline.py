@@ -44,21 +44,17 @@ from src.domain.services.patcher import ModulePatcher
 #  One-time construction of the pure, stateless services                      #
 # --------------------------------------------------------------------------- #
 
+cfg = config.Settings()
 
-def openai_factory(style: str):
-    return OpenAIClientAdapter(style=style)  # <- style locked in
-
-
-numpy_generator = ModuleEditGenerator(
-    style="numpy",
-    client_factory=openai_factory,
+edit_generator = ModuleEditGenerator(
+    client=OpenAIClientAdapter(model=cfg.model, prompt_style=cfg.doc_style),
     validator=schema_loader.VALIDATOR,
     mapper=mappers.map_json_to_module_edit,
 )
 _BUILDER = PromptBuilder(PromptTemplateRepository())
 _USES = DocumentationUpdateUseCase(
     builder=_BUILDER,
-    generator=numpy_generator,
+    generator=edit_generator,
     patcher=ModulePatcher(),
 )
 

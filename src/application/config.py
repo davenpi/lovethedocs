@@ -14,4 +14,5 @@ class Settings:
     application. Instances are immutable due to the `frozen=True` parameter.
     """
 
-    model_name: str = "gpt-4.1"
+    model: str = "gpt-4.1"
+    doc_style: str = "numpy"

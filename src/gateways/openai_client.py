@@ -50,8 +50,8 @@ class OpenAIClientAdapter:
     The doc-style is chosen *once* at construction; callers never pass it again.
     """
 
-    def __init__(self, *, style: str = "numpy", model: str = "gpt-4.1") -> None:
-        self._dev_prompt = _PROMPTS.get(style)
+    def __init__(self, *, prompt_style: str = "numpy", model: str = "gpt-4.1") -> None:
+        self._dev_prompt = _PROMPTS.get(prompt_style)
         self._model = model
         self._client = _get_sdk_client()
 
