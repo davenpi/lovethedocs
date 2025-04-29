@@ -2,7 +2,8 @@ States and critiques major architecture choices.
 
 ## Priority fixes
 
-- Use `DocStyle` more. See `DocStyle` and `ModuleEditGenerator` comments below.
+- Use `DocStyle` more. See `DocStyle` and `ModuleEditGenerator` comments below. Current
+  mixed usage is error prone.
 - See where we are blocked on asynchronous requests/speed.
 
 ## Domain
@@ -98,3 +99,10 @@ fundamental unit we work on, a `SourceModule`.
 - Largely unused. Either remove or refactor to use the style uniformly (e.g., demand
   client ports have a `DocStyle`).
 - Only have NumPy doc style so far.
+
+## Questions to ponder:
+
+1. How does the current architecture support or hinder the product's primary value
+   proposition?
+2. Which architectural improvements would deliver the most user value?
+3. Are there architectural choices that limit potential use cases?
