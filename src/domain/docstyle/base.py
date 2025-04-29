@@ -7,7 +7,5 @@ class DocStyle:
 
     # lowercase key used by config & template repository
     name: str
-    # hard-wrap rule for the summary + body lines
-    max_line_len: int
     # canonical order for sections inside a docstring
     section_order: tuple[str, ...]

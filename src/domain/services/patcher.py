@@ -1,9 +1,9 @@
 """
-ModulePatcher – apply a `ModuleEdit` to old source code.
+ModulePatcher - apply a `ModuleEdit` to old source code.
 
 For this first cut we splice in (or replace) docstrings only; signature edits
 can be added later by extending the visitor.  Everything stays inside the
-domain – no imports from the application layer.
+domain - no imports from the application layer.
 """
 
 from __future__ import annotations
@@ -242,14 +242,7 @@ class ModulePatcher:
 
     def apply(self, edit: ModuleEdit, old_code: str) -> str:
         # Build lookup {qualname: FunctionEdit|ClassEdit}
-        table: Dict[str, FunctionEdit | ClassEdit] = {}
+        edits_by_qname = edit.map_qnames_to_edits()
 
-        for fn in edit.function_edits:
-            table[fn.qualname] = fn
-        for cl in edit.class_edits:
-            table[cl.qualname] = cl
-
-        module = cst.parse_module(old_code)
-        mod_with_meta = metadata.MetadataWrapper(module)
-        patched = mod_with_meta.visit(_DocSigPatcher(table))
+        patched = cst.parse_module(old_code).visit(_DocSigPatcher(edits_by_qname))
         return patched.code

@@ -13,7 +13,7 @@ __pycache__/
 *.pytest_cache/
 
 # coverage
-.coverage
+.coverage*
 
 # dummy code for testing
 smoke/
