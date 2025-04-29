@@ -41,7 +41,7 @@ LLMClientFactory = Callable[[str], LLMClientPort]  # factory(style) -> LLMClient
 # --------------------------------------------------------------------------- #
 #  Service                                                                    #
 # --------------------------------------------------------------------------- #
-class DocstringGeneratorService:
+class ModuleEditGenerator:
     """
     A *style-specific* generator.
 

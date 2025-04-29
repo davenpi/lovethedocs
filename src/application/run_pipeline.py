@@ -37,7 +37,7 @@ from src.domain.templates import PromptTemplateRepository
 from src.domain.use_cases.update_docs import (
     DocumentationUpdateUseCase,
 )
-from src.domain.services.generator import DocstringGeneratorService
+from src.domain.services.generator import ModuleEditGenerator
 from src.domain.services.patcher import ModulePatcher
 
 # --------------------------------------------------------------------------- #
@@ -49,7 +49,7 @@ def openai_factory(style: str):
     return OpenAIClientAdapter(style=style)  # <- style locked in
 
 
-numpy_generator = DocstringGeneratorService(
+numpy_generator = ModuleEditGenerator(
     style="numpy",
     client_factory=openai_factory,
     validator=schema_loader.VALIDATOR,

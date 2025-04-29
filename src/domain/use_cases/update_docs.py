@@ -2,7 +2,7 @@
 Use-case: update documentation in a batch of modules.
 
 Pure coordination for now:
-    SourceModule ─► PromptBuilder ─► DocstringGeneratorService ─► ModulePatcher
+    SourceModule ─► PromptBuilder ─► ModuleEditGenerator ─► ModulePatcher
 No I/O, no logging, no retries.
 """
 
@@ -13,7 +13,7 @@ from typing import Iterable, Iterator, Tuple
 from src.domain.docstyle.base import DocStyle
 from src.domain.models import SourceModule
 from src.domain.services import PromptBuilder
-from src.domain.services.generator import DocstringGeneratorService
+from src.domain.services.generator import ModuleEditGenerator
 from src.domain.services.patcher import ModulePatcher
 
 
@@ -24,7 +24,7 @@ class DocumentationUpdateUseCase:
         self,
         *,
         builder: PromptBuilder,
-        generator: DocstringGeneratorService,
+        generator: ModuleEditGenerator,
         patcher: ModulePatcher,
     ) -> None:
         self._builder = builder

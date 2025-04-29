@@ -17,7 +17,7 @@ from typing import Any, Dict
 import pytest
 
 from src.domain.models import ModuleEdit
-from src.domain.services.generator import DocstringGeneratorService
+from src.domain.services.generator import ModuleEditGenerator
 
 
 # --------------------------------------------------------------------------- #
@@ -78,13 +78,13 @@ def _make_service(
         assert data is raw
         return sentinel
 
-    svc = DocstringGeneratorService(
+    gen = ModuleEditGenerator(
         style=STYLE,
         client_factory=factory,
         validator=validator,
         mapper=mapper,
     )
-    return svc, client, validator, sentinel, factory_log
+    return gen, client, validator, sentinel, factory_log
 
 
 # --------------------------------------------------------------------------- #
@@ -92,9 +92,9 @@ def _make_service(
 # --------------------------------------------------------------------------- #
 def test_generate_happy_path():
     raw = {"ok": True}
-    svc, client, validator, sentinel, log = _make_service(raw)
+    gen, client, validator, sentinel, log = _make_service(raw)
 
-    out = svc.generate("PROMPT")
+    out = gen.generate("PROMPT")
 
     # returns mapper output
     assert out is sentinel
@@ -112,12 +112,12 @@ def test_generate_happy_path():
 def test_generate_validator_error():
     raw = {"bad": "data"}
     err = ValueError("schema mismatch")
-    svc, client, validator, _, log = _make_service(
+    gen, client, validator, _, log = _make_service(
         raw, validator_exc=err, mapper_ret=object()
     )
 
     with pytest.raises(ValueError):
-        svc.generate("PROMPT")
+        gen.generate("PROMPT")
 
     assert log["count"] == 1
     assert validator.validated is raw
@@ -129,12 +129,12 @@ def test_generate_validator_error():
 #  3 ── client exception propagates                                           #
 # --------------------------------------------------------------------------- #
 def test_generate_client_error():
-    svc, client, validator, _, log = _make_service(
+    gen, client, validator, _, log = _make_service(
         raw={}, client_exc=RuntimeError("api down")
     )
 
     with pytest.raises(RuntimeError):
-        svc.generate("PROMPT")
+        gen.generate("PROMPT")
 
     assert log["count"] == 1
     # client attempted, validator never reached
