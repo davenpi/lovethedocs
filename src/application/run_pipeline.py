@@ -22,7 +22,9 @@ from tqdm import tqdm
 
 from src import ports
 from src.application import config, logging_setup  # side-effects only
-from src.application.diff_review import batch_review
+from src.gateways.vscode_diff_viewer import VSCodeDiffViewer
+from src.gateways import file_system as fs_gateway
+from src.application import diff_review
 from src.application import mappers
 from src.application import utils
 from src.gateways import schema_loader
@@ -150,4 +152,9 @@ def run_pipeline(
     if review_diffs:
         print("\nReviewing generated documentation…")
         for p in paths if isinstance(paths, Sequence) else [paths]:
-            batch_review(p)
+            diff_review.batch_review(
+                p,
+                diff_viewer=VSCodeDiffViewer(),
+                fs=fs_gateway,
+                interactive=True,  # or False in CI
+            )

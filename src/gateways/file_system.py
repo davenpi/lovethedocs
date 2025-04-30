@@ -3,6 +3,7 @@ I/O helpers.
 """
 
 from pathlib import Path
+import shutil
 
 IGNORED_DIRS = {"venv", ".git", "__pycache__", ".pytest_cache", ".vscode"}
 
@@ -38,6 +39,7 @@ def load_modules(path: Path) -> dict[str, str]:
     return modules
 
 
+# TODO: Fix. What is the `root` parameter really doing?
 def write_file(path: str | Path, code: str, root: Path | None = None) -> None:
     """
     Write code to disk under an '_improved' directory, preserving directory structure.
@@ -74,3 +76,14 @@ def write_file(path: str | Path, code: str, root: Path | None = None) -> None:
 
     # Ensure a single trailing newline; many tools expect it
     dest.write_text(code, encoding="utf-8")
+
+
+def backup_file(original: Path, root: Path) -> Path:
+    """Create a backup of the original file in a '_backups' directory. Parallel to
+    '_improved'."""
+    backup_dir = root / "_backups"
+    rel = original.relative_to(root)
+    dest = backup_dir / rel
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(original, dest)
+    return dest
