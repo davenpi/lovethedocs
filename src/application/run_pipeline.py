@@ -20,17 +20,16 @@ from typing import Iterable, Sequence, Union
 from black import FileMode, format_str
 from tqdm import tqdm
 
-from src import ports
 from src.application import config, logging_setup  # side-effects only
 from src.gateways.vscode_diff_viewer import VSCodeDiffViewer
-from src.gateways import file_system as fs_gateway
+
+from src.gateways.project_file_system import ProjectFileSystem
 from src.application import diff_review
 from src.application import mappers
 from src.application import utils
 from src.gateways import schema_loader
 from src.gateways.openai_client import OpenAIClientAdapter
 
-from src.gateways import file_system as fs_gateway
 from src.gateways import schema_loader
 
 from src.domain import docstyle
@@ -93,68 +92,63 @@ def _summarize_failures(
 #  Public adapter                                                             #
 # --------------------------------------------------------------------------- #
 def run_pipeline(
-    paths: Union[str, Path, Sequence[Union[str, Path]]],
+    paths: Union[str | Path, Sequence[str | Path]],
     *,
-    file_writer: ports.FileWriterPort = fs_gateway,
     review_diffs: bool = False,
 ) -> None:
     """
-    High-level CLI entry: update documentation for every `.py` file
+    High-level CLI entry: update documentation for every *.py file
     under the given path(s).
 
-    Parameters
-    ----------
-    paths
-        Directory, single file, or a sequence of both.
-    file_writer
-        Gateway that loads and writes files on disk.
-    review_diffs
-        If True, open VS Code diff view when finished.
+    `paths` may be a mix of files and directories.
     """
+
     if isinstance(paths, (str, Path)):
         paths = [paths]  # type: ignore[list-item]
 
     failures: list[tuple[Path, Exception]] = []
     processed = 0
 
-    for raw in tqdm(paths, desc="Paths", unit="pkg"):
-        root = Path(raw)
+    for raw in tqdm(paths, desc="Projects", unit="pkg"):
+        root = Path(raw).resolve()
 
-        # ----- load modules -------------------------------------------------
-        if root.is_dir():
-            module_map = file_writer.load_modules(root)
-        elif root.is_file() and root.suffix == ".py":
+        # --- establish a project-scoped file-system adapter ----------------
+        if root.is_file() and root.suffix == ".py":
+            # Single-file run: project root is the file’s parent
+            fs = ProjectFileSystem(root.parent)
             module_map = {root.relative_to(root.parent): root.read_text("utf-8")}
-            root = root.parent
+        elif root.is_dir():
+            fs = ProjectFileSystem(root)
+            module_map = fs.load_modules()
         else:
-            logging.warning("Skipping %s (not a directory or .py file)", root)
+            logging.warning("Skipping %s (not a directory or .py file)", raw)
             continue
 
         src_modules = [SourceModule(p, code) for p, code in module_map.items()]
 
-        # ----- call domain use-case ----------------------------------------
-
+        # --- call domain use-case -----------------------------------------
         updates = _USES.run(src_modules, style=doc_style)
 
         for mod, new_code in tqdm(updates, desc="Modules", unit="mod", leave=False):
             processed += 1
             try:
-                new_code = utils.apply_formatter(
-                    new_code, lambda s: format_str(s, mode=FileMode())
+                rel_path = mod.path if isinstance(mod.path, Path) else Path(mod.path)
+                formatted = utils.apply_formatter(
+                    new_code,
+                    lambda s: format_str(s, mode=FileMode()),
                 )
-                file_writer.write_file(mod.path, new_code, root=root)
+                fs.stage_file(rel_path, formatted)
             except Exception as exc:
-                failures.append((mod.path, exc))
-                print(f"x {mod.path} -> {exc}")
+                failures.append((rel_path, exc))
+                print(f"x {rel_path} -> {exc}")
+
+        # --- optional manual review for this project ----------------------
+        if review_diffs:
+            print("\nReviewing generated documentation…")
+            diff_review.batch_review(
+                fs,
+                diff_viewer=VSCodeDiffViewer(),
+                interactive=True,  # set False for CI
+            )
 
     _summarize_failures(failures, processed)
-
-    if review_diffs:
-        print("\nReviewing generated documentation…")
-        for p in paths if isinstance(paths, Sequence) else [paths]:
-            diff_review.batch_review(
-                p,
-                diff_viewer=VSCodeDiffViewer(),
-                fs=fs_gateway,
-                interactive=True,  # or False in CI
-            )
