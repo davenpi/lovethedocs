@@ -12,6 +12,7 @@ The service should
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -31,9 +32,9 @@ class FakeClient:
         raw: dict | None = None,
         *,
         exc: Exception | None = None,
-        style: str = "numpy",
+        style: str,
     ):
-        self.style = style
+        self.style = SimpleNamespace(name=style)  # to mock DocStyle.name
         self._raw = raw or {}
         self._exc = exc
         self.called_with: tuple[str] | None = None
@@ -94,13 +95,13 @@ def test_generate_happy_path():
 
     out = gen.generate("PROMPT")
 
+    assert client.style.name == STYLE
     # returns mapper output
     assert out is sentinel
     # client called with only the prompt
     assert client.called_with == ("PROMPT",)
     # validator saw the raw JSON
     assert validator.validated is raw
-    assert gen.style == STYLE
 
 
 # --------------------------------------------------------------------------- #
