@@ -30,7 +30,7 @@ from src.application import mappers
 from src.gateways import file_system as fs_gateway
 from src.gateways import schema_loader
 
-from src.domain.docstyle.numpy_style import NumPyDocStyle
+from src.domain import docstyle
 from src.domain.models import SourceModule
 from src.domain.services import PromptBuilder
 from src.domain.templates import PromptTemplateRepository
@@ -46,10 +46,13 @@ from src.domain.services.patcher import ModulePatcher
 
 cfg = config.Settings()
 
+doc_style = docstyle.DocStyle.from_string(cfg.doc_style)
+print(f"Using doc-style: {doc_style.name}")
+
 edit_generator = ModuleEditGenerator(
     client=OpenAIClientAdapter(
         model=cfg.model,
-        prompt_style=cfg.doc_style,
+        style=doc_style,
     ),
     validator=schema_loader.VALIDATOR,
     mapper=mappers.map_json_to_module_edit,
@@ -101,10 +104,6 @@ def run_pipeline(
     ----------
     paths
         Directory, single file, or a sequence of both.
-    settings
-        Model name, temperature, etc.
-    ai_client
-        Gateway that speaks to the LLM (defaults to OpenAI wrapper).
     file_writer
         Gateway that loads and writes files on disk.
     review_diffs
@@ -133,7 +132,7 @@ def run_pipeline(
 
         # ----- call domain use-case ----------------------------------------
 
-        updates = _USES.run(src_modules, style=NumPyDocStyle())
+        updates = _USES.run(src_modules, style=doc_style)
 
         for mod, new_code in tqdm(updates, desc="Modules", unit="mod", leave=False):
             processed += 1

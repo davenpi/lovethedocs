@@ -11,3 +11,7 @@ class NumPyDocStyle(DocStyle):
         "Notes",
         "References",
     )
+
+
+# Register the NumPyDocStyle in the registry
+DocStyle.register(NumPyDocStyle.name, NumPyDocStyle)

@@ -15,6 +15,7 @@ from openai import OpenAI
 
 from .schema_loader import _RAW_SCHEMA
 from src.domain.templates import PromptTemplateRepository
+from src.domain.docstyle import DocStyle
 
 
 # --------------------------------------------------------------------------- #
@@ -41,7 +42,7 @@ _PROMPTS = PromptTemplateRepository()  # cache inside class below
 
 
 # --------------------------------------------------------------------------- #
-#  Adapter                                                                     #
+#  Adapter                                                                    #
 # --------------------------------------------------------------------------- #
 class OpenAIClientAdapter:
     """
@@ -50,12 +51,12 @@ class OpenAIClientAdapter:
     The doc-style is chosen *once* at construction; callers never pass it again.
     """
 
-    def __init__(self, *, prompt_style: str = "numpy", model: str = "gpt-4.1") -> None:
-        self._dev_prompt = _PROMPTS.get(prompt_style)
+    def __init__(self, *, style: DocStyle, model: str = "gpt-4.1") -> None:
+        self._style = style
+        self._dev_prompt = _PROMPTS.get(style.name)
         self._model = model
         self._client = _get_sdk_client()
 
-    # This satisfies the (style-free) port
     def request(self, prompt: str) -> dict[str, Any]:
         response = self._client.responses.create(
             model=self._model,
@@ -73,21 +74,14 @@ class OpenAIClientAdapter:
         )
         return json.loads(response.output_text)
 
-    @classmethod
-    def from_config(cls, config: dict[str, str]) -> OpenAIClientAdapter:
+    @property
+    def style(self) -> DocStyle:
         """
-        Create an instance of OpenAIClientAdapter from a configuration dictionary.
-
-        Parameters
-        ----------
-        config : dict[str, str]
-            A dictionary containing the configuration parameters for the adapter.
+        The documentation style used by this client.
 
         Returns
         -------
-        OpenAIClientAdapter
-            An instance of OpenAIClientAdapter configured with the provided parameters.
+        DocStyle
+            The documentation style used by this client.
         """
-        style = config.get("style", "numpy")
-        model = config.get("model", "gpt-4.1")
-        return cls(style=style, model=model)
+        return self._style

@@ -17,15 +17,22 @@ from src.domain.models import ModuleEdit
 # --------------------------------------------------------------------------- #
 #  Ports (minimal)                                                            #
 # --------------------------------------------------------------------------- #
+# In domain/services/generator.py - Update the LLMClientPort
 class LLMClientPort(Protocol):
-    """Anything that can turn a prompt into JSON."""
+    """Turns a prompt into JSON using a specific documentation style."""
 
-    def request(self, prompt: str) -> dict:  # noqa: D401
+    @property
+    def style(self) -> DocStyle:
+        """The documentation style used by this client."""
+        ...
+
+    def request(self, prompt: str) -> dict:
+        """Convert a prompt to a JSON response using the client's style."""
         ...
 
 
 class JSONSchemaValidator(Protocol):
-    """Anything with .validate(raw_json) that raises on failure."""
+    """Implements a .validate(raw_json) that raises on failure."""
 
     def validate(self, raw_json: dict) -> None:  # noqa: D401
         ...
@@ -41,12 +48,6 @@ JSONToEditMapper = Callable[[dict], ModuleEdit]
 #  Service                                                                    #
 # --------------------------------------------------------------------------- #
 class ModuleEditGenerator:
-    """
-    A *style-specific* generator.
-
-    The chosen style is visible as `.style` and is passed once to the client
-    factory when the service is constructed.
-    """
 
     def __init__(
         self,
@@ -58,7 +59,6 @@ class ModuleEditGenerator:
         self._client = client
         self._validator = validator
         self._mapper = mapper
-        self.style: str = getattr(client, "style", "<unknown>")
 
     # ------------------------------------------------------------------ #
     #  Public API                                                         #
