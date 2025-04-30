@@ -23,10 +23,11 @@ from tqdm import tqdm
 from src import ports
 from src.application import config, logging_setup  # side-effects only
 from src.application.diff_review import batch_review
+from src.application import mappers
 from src.application import utils
 from src.gateways import schema_loader
 from src.gateways.openai_client import OpenAIClientAdapter
-from src.application import mappers
+
 from src.gateways import file_system as fs_gateway
 from src.gateways import schema_loader
 
