@@ -47,13 +47,12 @@ from src.domain.services.patcher import ModulePatcher
 cfg = config.Settings()
 
 doc_style = docstyle.DocStyle.from_string(cfg.doc_style)
-print(f"Using doc-style: {doc_style.name}")
-
+openai_client = OpenAIClientAdapter(
+    model=cfg.model,
+    style=doc_style,
+)
 edit_generator = ModuleEditGenerator(
-    client=OpenAIClientAdapter(
-        model=cfg.model,
-        style=doc_style,
-    ),
+    client=openai_client,
     validator=schema_loader.VALIDATOR,
     mapper=mappers.map_json_to_module_edit,
 )

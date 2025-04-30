@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Protocol, Callable
 
-from src.domain.docstyle.base import DocStyle
+from src.domain.docstyle import DocStyle
 from src.domain.models import ModuleEdit
 
 
@@ -59,6 +59,8 @@ class ModuleEditGenerator:
         self._client = client
         self._validator = validator
         self._mapper = mapper
+
+        print(f"ModuleEditGenerator created with style: {self._client.style.name}")
 
     # ------------------------------------------------------------------ #
     #  Public API                                                         #
