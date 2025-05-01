@@ -15,18 +15,13 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Iterable, Sequence, Union
+from typing import Callable, Iterable, Sequence, Union
 
 from black import FileMode, format_str
 from tqdm import tqdm
 
-from src.application import (
-    config,
-    diff_review,
-    logging_setup,  # noqa: F401
-    mappers,
-    utils,
-)
+from src.application import logging_setup  # noqa: F401
+from src.application import config, diff_review, mappers, utils
 from src.domain import docstyle
 from src.domain.models import SourceModule
 from src.domain.services import PromptBuilder
@@ -91,6 +86,8 @@ def _summarize_failures(
 def run_pipeline(
     paths: Union[str | Path, Sequence[str | Path]],
     *,
+    fs_factory: Callable[[Path], ProjectFileSystem] = utils.fs_factory,
+    use_case: DocumentationUpdateUseCase = _USES,
     review_diffs: bool = False,
 ) -> None:
     """
@@ -112,10 +109,10 @@ def run_pipeline(
         # --- establish a project-scoped file-system adapter ----------------
         if root.is_file() and root.suffix == ".py":
             # Single-file run: project root is the file’s parent
-            fs = ProjectFileSystem(root.parent)
+            fs = fs_factory(root.parent)
             module_map = {root.relative_to(root.parent): root.read_text("utf-8")}
         elif root.is_dir():
-            fs = ProjectFileSystem(root)
+            fs = fs_factory(root)
             module_map = fs.load_modules()
         else:
             logging.warning("Skipping %s (not a directory or .py file)", raw)
@@ -124,7 +121,7 @@ def run_pipeline(
         src_modules = [SourceModule(p, code) for p, code in module_map.items()]
 
         # --- call domain use-case -----------------------------------------
-        updates = _USES.run(src_modules, style=doc_style)
+        updates = use_case.run(src_modules, style=doc_style)
 
         for mod, new_code in tqdm(updates, desc="Modules", unit="mod", leave=False):
             processed += 1

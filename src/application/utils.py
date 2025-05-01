@@ -2,7 +2,10 @@
 Small helpers that aren't worth their own module yet.
 """
 
+from pathlib import Path
 from typing import Callable, Optional
+
+from src.gateways.project_file_system import ProjectFileSystem
 
 
 def apply_formatter(code: str, fmt: Optional[Callable[[str], str]] = None) -> str:
@@ -22,3 +25,10 @@ def apply_formatter(code: str, fmt: Optional[Callable[[str], str]] = None) -> st
         Formatted or original source.
     """
     return fmt(code) if fmt else code
+
+
+def fs_factory(root: Path) -> ProjectFileSystem:
+    """
+    Return a ``ProjectFileSystem`` for the given root.
+    """
+    return ProjectFileSystem(root)
