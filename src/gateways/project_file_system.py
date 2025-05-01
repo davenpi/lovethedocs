@@ -4,7 +4,35 @@ from typing import Dict
 
 from src.ports import FileSystemPort
 
-IGNORED_DIRS = {"venv", ".git", "__pycache__", ".pytest_cache", ".vscode"}
+IGNORED_DIRS = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pycache__",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]  # from ruff config
 
 
 class ProjectFileSystem(FileSystemPort):
