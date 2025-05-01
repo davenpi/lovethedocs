@@ -14,6 +14,12 @@ from pathlib import Path
 from src.gateways.project_file_system import ProjectFileSystem
 from src.ports import DiffViewerPort
 
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
+
+console = Console()
+
 
 # --------------------------------------------------------------------------- #
 # core review logic                                                           #
@@ -77,4 +83,13 @@ def batch_review(
         accepted += int(ok)
         rejected += int(not ok)
 
-    print(f"\nReview complete: {accepted} accepted, {rejected} rejected")
+    # pretty summary panel
+    if rejected == 0:
+        summary_text = Text(f"✓ {accepted} accepted - 0 rejected", style="bold green")
+    else:
+        summary_text = Text(
+            f"✓ {accepted} accepted   ✗ {rejected} rejected",
+            style="yellow" if accepted else "bold red",
+        )
+
+    console.print(Panel.fit(summary_text, title="Review complete"))

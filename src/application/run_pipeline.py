@@ -12,16 +12,24 @@ services and the DocumentationUpdateUseCase.  This module only
 
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
-from typing import Callable, Iterable, Sequence, Union
+from typing import Callable, Sequence, Union
 
-from black import FileMode, format_str
-from tqdm import tqdm
+from rich.console import Console
+from rich.panel import Panel
+from rich.progress import (
+    BarColumn,
+    Progress,
+    SpinnerColumn,
+    TaskProgressColumn,
+    TextColumn,
+    TimeElapsedColumn,
+)
+from rich.table import Table
 
 from src.application import logging_setup  # noqa: F401
-from src.application import config, diff_review, mappers, utils
+from src.application import config, mappers, utils
 from src.domain import docstyle
 from src.domain.models import SourceModule
 from src.domain.services import PromptBuilder
@@ -35,9 +43,54 @@ from src.gateways.project_file_system import ProjectFileSystem
 from src.gateways.vscode_diff_viewer import VSCodeDiffViewer
 
 # --------------------------------------------------------------------------- #
+#  Helpers                                                                    #
+# --------------------------------------------------------------------------- #
+console = Console()
+
+
+def _make_progress() -> Progress:
+    """A two-line, colour-blind-friendly progress bar."""
+    return Progress(
+        SpinnerColumn(style="yellow"),
+        TextColumn("[bold blue]{task.description}"),
+        BarColumn(bar_width=None, complete_style="green"),
+        TaskProgressColumn(),
+        TimeElapsedColumn(),
+        console=console,
+        transient=True,  # clear bar when done
+    )
+
+
+def _summarize_failures(failures: list[tuple[Path, Exception]], processed: int) -> None:
+    if not failures:
+        console.print(
+            Panel.fit(
+                f"✓ {processed} modules updated without errors.",
+                style="bold green",
+            )
+        )
+        return
+
+    table = Table(title="Failed modules", show_lines=True, expand=True)
+    table.add_column("Module")
+    table.add_column("Error", overflow="fold")
+
+    for path, exc in failures:
+        table.add_row(str(path), str(exc))
+        logging.exception("Failure in %s", path, exc_info=exc)
+
+    console.print(
+        Panel(
+            table,
+            title=f"✓ {processed - len(failures)} ok   ✗ {len(failures)} failed",
+            style="red",
+        )
+    )
+
+
+# --------------------------------------------------------------------------- #
 #  One-time construction of the pure, stateless services                      #
 # --------------------------------------------------------------------------- #
-
 cfg = config.Settings()
 
 doc_style = docstyle.DocStyle.from_string(cfg.doc_style)
@@ -59,28 +112,6 @@ _USES = DocumentationUpdateUseCase(
 
 
 # --------------------------------------------------------------------------- #
-#  Helpers                                                                    #
-# --------------------------------------------------------------------------- #
-def _summarize_failures(
-    failures: Iterable[tuple[Path, Exception]], processed: int
-) -> None:
-    failures = list(failures)
-    if not failures:
-        print("✓ All modules processed without errors.")
-        return
-
-    ok = processed - len(failures)
-    print(f"\n✓ {ok} modules updated   |   ✗ {len(failures)} failed")
-    print("See failed_modules.json for details.")
-
-    payload = [{"module": str(p), "error": str(e)} for p, e in failures]
-    Path("failed_modules.json").write_text(json.dumps(payload, indent=2))
-
-    for p, e in failures:
-        logging.exception("Failure in %s", p, exc_info=e)
-
-
-# --------------------------------------------------------------------------- #
 #  Public adapter                                                             #
 # --------------------------------------------------------------------------- #
 def run_pipeline(
@@ -88,57 +119,70 @@ def run_pipeline(
     *,
     fs_factory: Callable[[Path], ProjectFileSystem] = utils.fs_factory,
     use_case: DocumentationUpdateUseCase = _USES,
-    review_diffs: bool = False,
-) -> None:
+) -> list[ProjectFileSystem]:
     """
-    High-level CLI entry: update documentation for every *.py file
-    under the given path(s).
+    High-level CLI entry: update documentation for every *.py file under *paths*.
 
-    `paths` may be a mix of files and directories.
+    Parameters
+    ----------
+    paths
+        One or more files / directories.  Mixed input is allowed.
+    fs_factory
+        Factory that returns a `ProjectFileSystem` given the project root.
+    use_case
+        Pre-wired instance of `DocumentationUpdateUseCase`.
+    review_diffs
+        Open diffs for interactive review when ``True``.
     """
-
+    # Normalise input --------------------------------------------------------
     if isinstance(paths, (str, Path)):
         paths = [paths]  # type: ignore[list-item]
 
     failures: list[tuple[Path, Exception]] = []
     processed = 0
 
-    for raw in tqdm(paths, desc="Projects", unit="pkg"):
-        root = Path(raw).resolve()
+    file_systems: list[ProjectFileSystem] = []
 
-        # --- establish a project-scoped file-system adapter ----------------
-        if root.is_file() and root.suffix == ".py":
-            # Single-file run: project root is the file’s parent
-            fs = fs_factory(root.parent)
-            module_map = {root.relative_to(root.parent): root.read_text("utf-8")}
-        elif root.is_dir():
-            fs = fs_factory(root)
-            module_map = fs.load_modules()
-        else:
-            logging.warning("Skipping %s (not a directory or .py file)", raw)
-            continue
+    # Live progress ----------------------------------------------------------
+    with _make_progress() as progress:
+        proj_task = progress.add_task("Projects", total=len(paths))
 
-        src_modules = [SourceModule(p, code) for p, code in module_map.items()]
+        for raw in paths:
+            root = Path(raw).resolve()
 
-        # --- call domain use-case -----------------------------------------
-        updates = use_case.run(src_modules, style=doc_style)
+            # ── establish a project‑scoped file‑system adapter ───────────────
+            if root.is_file() and root.suffix == ".py":
+                fs = fs_factory(root.parent)
+                module_map = {root.relative_to(root.parent): root.read_text("utf-8")}
+            elif root.is_dir():
+                fs = fs_factory(root)
+                module_map = fs.load_modules()
+            else:
+                logging.warning("Skipping %s (not a directory or .py file)", raw)
+                progress.advance(proj_task)
+                continue
 
-        for mod, new_code in tqdm(updates, desc="Modules", unit="mod", leave=False):
-            processed += 1
-            try:
+            src_modules = [SourceModule(p, code) for p, code in module_map.items()]
+
+            # ── inner bar: modules inside one project ────────────────────────
+            mod_task = progress.add_task(f"[cyan]{root.name}", total=len(src_modules))
+
+            updates = use_case.run(src_modules, style=doc_style)
+
+            for mod, new_code in updates:
                 rel_path = mod.path if isinstance(mod.path, Path) else Path(mod.path)
-                fs.stage_file(rel_path, new_code)
-            except Exception as exc:
-                failures.append((rel_path, exc))
-                print(f"x {rel_path} -> {exc}")
+                try:
+                    fs.stage_file(rel_path, new_code)
+                except Exception as exc:
+                    failures.append((rel_path, exc))
+                    logging.exception("Failure in %s", rel_path, exc_info=exc)
+                finally:
+                    processed += 1
+                    progress.advance(mod_task)
+            file_systems.append(fs)
 
-        # --- optional manual review for this project ----------------------
-        if review_diffs:
-            print("\nReviewing generated documentation…")
-            diff_review.batch_review(
-                fs,
-                diff_viewer=VSCodeDiffViewer(),
-                interactive=True,  # set False for CI
-            )
+            progress.advance(proj_task)
 
+    # Final summary ----------------------------------------------------------
     _summarize_failures(failures, processed)
+    return file_systems

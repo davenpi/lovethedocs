@@ -11,14 +11,16 @@ Generate docs for two packages, then open diffs:
     lovethedocs update src/ tests/
     lovethedocs review src/ tests/
 """
+
 from __future__ import annotations
 
 from pathlib import Path
 from typing import List
 
 import typer
+from rich.console import Console
 
-from src.application import run_pipeline, diff_review
+from src.application import diff_review, run_pipeline
 from src.gateways.project_file_system import ProjectFileSystem
 from src.gateways.vscode_diff_viewer import VSCodeDiffViewer
 
@@ -49,9 +51,18 @@ def update(
 ) -> None:
     """
     Run the documentation-update pipeline and stage results under
-    ``.lovethedocs/improved``.
+    `.lovethedocs/improved`.
     """
-    run_pipeline.run_pipeline(paths, review_diffs=review)
+    file_systems = run_pipeline.run_pipeline(paths)
+    if review:
+        console = Console()
+        console.rule("[bold magenta]Reviewing documentation updates")
+        for fs in file_systems:
+            diff_review.batch_review(
+                fs,
+                diff_viewer=VSCodeDiffViewer(),
+                interactive=True,
+            )
 
 
 # --------------------------------------------------------------------------- #
