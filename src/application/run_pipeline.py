@@ -127,11 +127,7 @@ def run_pipeline(
             processed += 1
             try:
                 rel_path = mod.path if isinstance(mod.path, Path) else Path(mod.path)
-                formatted = utils.apply_formatter(
-                    new_code,
-                    lambda s: format_str(s, mode=FileMode()),
-                )
-                fs.stage_file(rel_path, formatted)
+                fs.stage_file(rel_path, new_code)
             except Exception as exc:
                 failures.append((rel_path, exc))
                 print(f"x {rel_path} -> {exc}")

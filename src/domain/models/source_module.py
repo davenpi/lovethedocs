@@ -38,7 +38,7 @@ class SourceModule:
     @cached_property
     def objects(self) -> list[str]:
         """
-        Fully-qualified names of every function / class in lexical order.
+        Fully-qualified names of every function / class in module.
 
         Example
         -------
