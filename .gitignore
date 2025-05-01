@@ -32,3 +32,6 @@ evals/
 
 # ruff
 *.ruff_cache/
+
+# lovethedocs
+*.lovethedocs/

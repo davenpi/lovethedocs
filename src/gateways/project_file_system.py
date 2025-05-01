@@ -32,14 +32,16 @@ IGNORED_DIRS = [
     "node_modules",
     "site-packages",
     "venv",
-]  # from ruff config
+    ".lovethedocs",
+]
 
 
 class ProjectFileSystem(FileSystemPort):
     def __init__(self, project_root: Path):
         self.root = project_root.resolve()
-        self.staged_root = self.root / "_improved"
-        self.backup_root = self.root / "_backups"
+        self.ltd_root = self.root / ".lovethedocs"
+        self.staged_root = self.ltd_root / "improved"
+        self.backup_root = self.ltd_root / "backups"
 
     # ---------- internal guard ------------------------------------------- #
     def _ensure_relative(self, rel_path: Path) -> None:
