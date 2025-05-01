@@ -5,17 +5,18 @@ Concrete adapter that satisfies `LLMClientPort`.
 from __future__ import annotations
 
 import json
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-import os
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from .schema_loader import _RAW_SCHEMA
-from src.domain.templates import PromptTemplateRepository
 from src.domain.docstyle import DocStyle
+from src.domain.templates import PromptTemplateRepository
+
+from .schema_loader import _RAW_SCHEMA
 
 
 # --------------------------------------------------------------------------- #

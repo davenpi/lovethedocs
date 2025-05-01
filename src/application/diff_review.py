@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.ports import DiffViewerPort
 from src.gateways.project_file_system import ProjectFileSystem
+from src.ports import DiffViewerPort
 
 
 # --------------------------------------------------------------------------- #

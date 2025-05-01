@@ -12,7 +12,7 @@ from typing import Dict, List
 
 import pytest
 
-from src.domain.models import SourceModule, ModuleEdit
+from src.domain.models import ModuleEdit, SourceModule
 from src.domain.use_cases.update_docs import DocumentationUpdateUseCase
 
 

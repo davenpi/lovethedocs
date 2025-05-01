@@ -1,8 +1,9 @@
-import textwrap
 import tempfile
+import textwrap
 from pathlib import Path
 
 import pytest
+
 from src.gateways.project_file_system import ProjectFileSystem
 
 

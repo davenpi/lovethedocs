@@ -11,7 +11,6 @@ import pytest
 
 from src.domain.models.source_module import SourceModule
 
-
 pytest.importorskip("libcst")  # ensure LibCST is available
 
 

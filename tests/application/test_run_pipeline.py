@@ -4,9 +4,10 @@ from unittest.mock import patch
 
 import pytest
 
+import src.domain.services.prompt_builder as pb
+
 # --- patch prompt_builder & validator -----------------------------------
 import src.gateways.schema_loader as sl
-import src.domain.services.prompt_builder as pb
 
 
 def _stub_ai_noop():
@@ -42,11 +43,14 @@ def test_run_pipeline_happy_path(tmp_path):
 
     writer = StubWriter()
 
-    with patch.object(
-        pb.PromptBuilder,
-        "build",
-        lambda _self, mods, *, style="numpy": {mod: "PROMPT" for mod in mods},
-    ), patch.object(sl, "VALIDATOR", SimpleNamespace(validate=lambda *_: None)):
+    with (
+        patch.object(
+            pb.PromptBuilder,
+            "build",
+            lambda _self, mods, *, style="numpy": {mod: "PROMPT" for mod in mods},
+        ),
+        patch.object(sl, "VALIDATOR", SimpleNamespace(validate=lambda *_: None)),
+    ):
         from src.application.run_pipeline import run_pipeline
 
         run_pipeline(
@@ -79,11 +83,14 @@ def test_run_pipeline_single_python_file(tmp_path):
 
     writer = StubWriter()
 
-    with patch.object(
-        pb.PromptBuilder,
-        "build",
-        lambda _self, mods, *, style="numpy": {m: "PROMPT" for m in mods},
-    ), patch.object(sl, "VALIDATOR", SimpleNamespace(validate=lambda *_: None)):
+    with (
+        patch.object(
+            pb.PromptBuilder,
+            "build",
+            lambda _self, mods, *, style="numpy": {m: "PROMPT" for m in mods},
+        ),
+        patch.object(sl, "VALIDATOR", SimpleNamespace(validate=lambda *_: None)),
+    ):
         from src.application.run_pipeline import run_pipeline
 
         run_pipeline(
@@ -128,11 +135,14 @@ def test_run_pipeline_mixed_inputs(tmp_path):
 
     writer = StubWriter()
 
-    with patch.object(
-        pb.PromptBuilder,
-        "build",
-        lambda _self, mods, *, style="numpy": {m: "PROMPT" for m in mods},
-    ), patch.object(sl, "VALIDATOR", SimpleNamespace(validate=lambda *_: None)):
+    with (
+        patch.object(
+            pb.PromptBuilder,
+            "build",
+            lambda _self, mods, *, style="numpy": {m: "PROMPT" for m in mods},
+        ),
+        patch.object(sl, "VALIDATOR", SimpleNamespace(validate=lambda *_: None)),
+    ):
         from src.application.run_pipeline import run_pipeline
 
         run_pipeline(

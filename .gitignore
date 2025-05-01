@@ -29,3 +29,6 @@ evals/
 
 # json
 *.json
+
+# ruff
+*.ruff_cache/

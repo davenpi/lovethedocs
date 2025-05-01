@@ -3,7 +3,6 @@ from src.domain.models import FunctionEdit, ModuleEdit
 
 
 def test_create_module_edit_from_json_roundtrip():
-
     src_json = {
         "function_edits": [
             {"qualname": "foo", "docstring": "Hello", "signature": None}

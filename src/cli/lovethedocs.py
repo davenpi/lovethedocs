@@ -4,6 +4,7 @@ Command-line entry-point.
 """
 
 import argparse
+
 from src.application import run_pipeline
 
 

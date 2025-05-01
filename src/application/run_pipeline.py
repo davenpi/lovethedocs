@@ -20,27 +20,24 @@ from typing import Iterable, Sequence, Union
 from black import FileMode, format_str
 from tqdm import tqdm
 
-from src.application import config, logging_setup  # side-effects only
-from src.gateways.vscode_diff_viewer import VSCodeDiffViewer
-
-from src.gateways.project_file_system import ProjectFileSystem
-from src.application import diff_review
-from src.application import mappers
-from src.application import utils
-from src.gateways import schema_loader
-from src.gateways.openai_client import OpenAIClientAdapter
-
-from src.gateways import schema_loader
-
+from src.application import (
+    config,
+    diff_review,
+    logging_setup,  # noqa: F401
+    mappers,
+    utils,
+)
 from src.domain import docstyle
 from src.domain.models import SourceModule
 from src.domain.services import PromptBuilder
-from src.domain.templates import PromptTemplateRepository
-from src.domain.use_cases.update_docs import (
-    DocumentationUpdateUseCase,
-)
 from src.domain.services.generator import ModuleEditGenerator
 from src.domain.services.patcher import ModulePatcher
+from src.domain.templates import PromptTemplateRepository
+from src.domain.use_cases.update_docs import DocumentationUpdateUseCase
+from src.gateways import schema_loader
+from src.gateways.openai_client import OpenAIClientAdapter
+from src.gateways.project_file_system import ProjectFileSystem
+from src.gateways.vscode_diff_viewer import VSCodeDiffViewer
 
 # --------------------------------------------------------------------------- #
 #  One-time construction of the pure, stateless services                      #

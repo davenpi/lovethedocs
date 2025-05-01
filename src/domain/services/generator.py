@@ -13,7 +13,6 @@ from typing import Callable
 from src.domain.models import ModuleEdit
 from src.domain.ports import JSONSchemaValidator, LLMClientPort
 
-
 # --------------------------------------------------------------------------- #
 #  Type aliases                                                               #
 # --------------------------------------------------------------------------- #
@@ -24,7 +23,6 @@ JSONToEditMapper = Callable[[dict], ModuleEdit]
 #  Service                                                                    #
 # --------------------------------------------------------------------------- #
 class ModuleEditGenerator:
-
     def __init__(
         self,
         *,

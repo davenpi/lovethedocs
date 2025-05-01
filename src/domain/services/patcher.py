@@ -12,8 +12,7 @@ import textwrap
 
 import libcst as cst
 
-from src.domain.models import ModuleEdit, FunctionEdit, ClassEdit
-
+from src.domain.models import ClassEdit, FunctionEdit, ModuleEdit
 
 # --------------------------------------------------------------------------- #
 #  Low-level CST transformer                                                  #

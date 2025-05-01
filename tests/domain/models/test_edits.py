@@ -1,7 +1,6 @@
-from src.domain.models import ModuleEdit, FunctionEdit, ClassEdit
-
-
 from dataclasses import asdict
+
+from src.domain.models import ClassEdit, FunctionEdit, ModuleEdit
 
 
 def _make_function_edit(qualname):

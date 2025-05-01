@@ -15,7 +15,7 @@ import textwrap
 
 import pytest
 
-from src.domain.models import FunctionEdit, ClassEdit, ModuleEdit
+from src.domain.models import ClassEdit, FunctionEdit, ModuleEdit
 from src.domain.services.patcher import ModulePatcher
 
 
