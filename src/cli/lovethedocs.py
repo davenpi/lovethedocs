@@ -1,45 +1,92 @@
 #!/usr/bin/env python
 """
-Command-line entry-point.
+lovethedocs - Typer CLI
+=======================
+
+Usage examples
+--------------
+
+Generate docs for two packages, then open diffs:
+
+    lovethedocs update src/ tests/
+    lovethedocs review src/ tests/
 """
+from __future__ import annotations
 
-import argparse
+from pathlib import Path
+from typing import List
 
-from src.application import run_pipeline
+import typer
+
+from src.application import run_pipeline, diff_review
+from src.gateways.project_file_system import ProjectFileSystem
+from src.gateways.vscode_diff_viewer import VSCodeDiffViewer
+
+# --------------------------------------------------------------------------- #
+#  Typer root application                                                     #
+# --------------------------------------------------------------------------- #
+app = typer.Typer(add_completion=False, help="LLM-powered documentation tool.")
 
 
-def main() -> None:
-    """
-    Parse command-line arguments and run the documentation pipeline.
-
-    This function sets up the argument parser, collects the paths to be documented,
-    and invokes the pipeline to process the specified directories or files. Additional
-    options control diff review.
-
-    Returns
-    -------
-    None
-        This function does not return a value.
-    """
-    parser = argparse.ArgumentParser(prog="lovethedocs")
-    parser.add_argument(
-        "paths",
-        nargs="+",
-        help="One or more directories or files whose code should be documented.",
-    )
-    parser.add_argument(
+# --------------------------------------------------------------------------- #
+#  `update` – generate / stage edits                                          #
+# --------------------------------------------------------------------------- #
+@app.command()
+def update(
+    paths: List[Path] = typer.Argument(
+        ...,
+        exists=True,
+        resolve_path=True,
+        metavar="PATHS",
+        help="Files or directories whose Python sources should be documented.",
+    ),
+    review: bool = typer.Option(
+        False,
         "--review",
-        action="store_true",
-        help="Open diffs for review after processing",
-    )
-    args = parser.parse_args()
+        "-r",
+        help="Immediately open diffs after generation.",
+    ),
+) -> None:
+    """
+    Run the documentation-update pipeline and stage results under
+    ``.lovethedocs/improved``.
+    """
+    run_pipeline.run_pipeline(paths, review_diffs=review)
 
-    print("Running pipeline with paths:", args.paths)
-    run_pipeline.run_pipeline(
-        args.paths,
-        review_diffs=args.review,
-    )
+
+# --------------------------------------------------------------------------- #
+#  `review` – inspect staged edits                                            #
+# --------------------------------------------------------------------------- #
+@app.command()
+def review(
+    paths: List[Path] = typer.Argument(
+        ...,
+        exists=True,
+        resolve_path=True,
+        metavar="PATHS",
+        help="Project roots that contain a .lovethedocs folder.",
+    ),
+    interactive: bool = typer.Option(
+        True,
+        "--interactive/--no-interactive",
+        help="Prompt before moving to the next diff (default: interactive).",
+    ),
+) -> None:
+    """
+    Open staged edits in your diff viewer (VS Code by default).
+    """
+    for root in paths:
+        fs = ProjectFileSystem(root)
+        if not fs.staged_root.exists():
+            typer.echo(f"ℹ️  No staged edits found in {root}")
+            continue
+
+        diff_review.batch_review(
+            fs,
+            diff_viewer=VSCodeDiffViewer(),
+            interactive=interactive,
+        )
 
 
 if __name__ == "__main__":
-    main()
+    app()

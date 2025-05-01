@@ -34,8 +34,6 @@ class ModuleEditGenerator:
         self._validator = validator
         self._mapper = mapper
 
-        print(f"ModuleEditGenerator created with style: {self._client.style.name}")
-
     # ------------------------------------------------------------------ #
     #  Public API                                                         #
     # ------------------------------------------------------------------ #
