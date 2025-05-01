@@ -79,6 +79,7 @@ class ProjectFileSystem(FileSystemPort):
         self.backup_path(rel_path).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(orig, self.backup_path(rel_path))
         shutil.copy2(staged, orig)
+        self.delete_staged(rel_path)
 
     # ---------------------- helpers --------------------------------------- #
     def original_path(self, rel_path: Path) -> Path:
@@ -89,3 +90,22 @@ class ProjectFileSystem(FileSystemPort):
 
     def backup_path(self, rel_path: Path) -> Path:
         return self.backup_root / rel_path
+
+    # ---------- clean up ---------------------------------------------- #
+    def delete_staged(self, rel_path: Path) -> None:
+        """Remove the staged file and prune empty dirs up to _improved/."""
+        self._ensure_relative(rel_path)
+
+        staged = self.staged_path(rel_path)
+        if not staged.exists():
+            return
+
+        staged.unlink()  # remove the file
+
+        cur = staged.parent
+        while cur != self.staged_root and not any(cur.iterdir()):
+            cur.rmdir()
+            cur = cur.parent  # walk upward
+
+        if not any(self.staged_root.iterdir()):
+            self.staged_root.rmdir()

@@ -79,3 +79,67 @@ def test_stage_file_absolute_path_raises():
 
         with pytest.raises(ValueError):
             fs.stage_file(abs_path, "pass")
+
+
+# ---------- delete_staged ------------------------------------------------ #
+def test_delete_staged_prunes_empty_dirs():
+    """Staging a single nested file and then deleting it should
+    remove the file *and* clean up the empty directory tree,
+    ultimately deleting the top‑level _improved/ directory.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        project_root = Path(tmp) / "repo"
+        rel_path = Path("src/nested/alpha.py")
+        code = "print('hi')\n"
+
+        fs = ProjectFileSystem(project_root)
+        fs.stage_file(rel_path, code)
+
+        staged_file = fs.staged_path(rel_path)
+        # Sanity check – file and _improved dir exist
+        assert staged_file.is_file()
+        assert fs.staged_root.exists()
+
+        # Act
+        fs.delete_staged(rel_path)
+
+        # The staged file and the entire _improved tree should be gone
+        assert not staged_file.exists()
+        assert not fs.staged_root.exists()
+
+
+# ---------- apply_stage idempotence ------------------------------------- #
+def test_apply_stage_is_idempotent():
+    """Applying a staged change twice should leave the workspace in a
+    consistent state: the first call copies code and makes a backup,
+    the second call raises FileNotFoundError while leaving everything
+    else untouched.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        project_root = Path(tmp) / "repo"
+        project_root.mkdir(parents=True, exist_ok=True)
+
+        rel_path = Path("alpha.py")
+        original_code = "x = 1\n"
+        updated_code = "x = 2\n"
+
+        # Write original file
+        (project_root / rel_path).write_text(original_code)
+
+        fs = ProjectFileSystem(project_root)
+
+        # Stage an update and apply it once
+        fs.stage_file(rel_path, updated_code)
+        fs.apply_stage(rel_path)
+
+        # Verify update and backup
+        assert (project_root / rel_path).read_text() == updated_code
+        assert fs.backup_path(rel_path).read_text() == original_code
+
+        # Second apply should raise but not corrupt state
+        with pytest.raises(FileNotFoundError):
+            fs.apply_stage(rel_path)
+
+        # Final consistency checks
+        assert (project_root / rel_path).read_text() == updated_code
+        assert fs.backup_path(rel_path).is_file()
