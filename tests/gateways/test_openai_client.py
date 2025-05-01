@@ -7,15 +7,26 @@ import pytest
 from src.gateways import openai_client as oc
 
 
-def test_request_returns_parsed_json(monkeypatch):
-    """
-    * Patches oc._get_client to return a fake client, so no real network I/O.
-    * Captures kwargs to verify that model and instructions are forwarded.
-    """
+# --------------------------------------------------------------------------- #
+# Helpers                                                                     #
+# --------------------------------------------------------------------------- #
+class _DummyStyle:  # minimal stand-in for DocStyle
+    name = "dummy"
 
+
+def _clear_client_cache() -> None:
+    """Reset the lru_cache between tests so each test starts fresh."""
+    oc._get_sdk_client.cache_clear()
+
+
+# --------------------------------------------------------------------------- #
+# 1. request() parses JSON and forwards kwargs                                 #
+# --------------------------------------------------------------------------- #
+def test_request_returns_parsed_json(monkeypatch):
+    _clear_client_cache()
     captured = {}
 
-    # --- build a fake client that mimics the real OpenAI shape -------------
+    # --- fake SDK client ----------------------------------------------------
     class FakeResponses:
         def create(self, **kwargs):
             captured.update(kwargs)
@@ -23,32 +34,41 @@ def test_request_returns_parsed_json(monkeypatch):
 
     fake_client = SimpleNamespace(responses=FakeResponses())
 
-    # --- patch the lazy getter to always return our fake -------------------
-    monkeypatch.setattr(oc, "_get_client", lambda: fake_client)
+    # patch: use our fake SDK client, and short-circuit the prompt loader
+    monkeypatch.setattr(oc, "_get_sdk_client", lambda: fake_client)
+    monkeypatch.setattr(oc, "_PROMPTS", SimpleNamespace(get=lambda _n: "TEST_PROMPT"))
 
-    result = oc.request("PROMPT", model="gpt-test")
+    # instantiate the adapter under test
+    adapter = oc.OpenAIClientAdapter(style=_DummyStyle(), model="gpt-test")
 
-    # -- assertions ---------------------------------------------------------
+    result = adapter.request("PROMPT")
+
     assert result == {"ok": True}
     assert captured["model"] == "gpt-test"
-    assert captured["instructions"]
+    assert captured["instructions"] == "TEST_PROMPT"
     assert captured["text"]["format"]["type"] == "json_schema"
 
 
-def test_get_api_key_raises_when_missing(monkeypatch):
-    from src.gateways import openai_client as oc
+# --------------------------------------------------------------------------- #
+# 2. _get_sdk_client raises if the API key is missing                          #
+# --------------------------------------------------------------------------- #
+def test_get_sdk_client_raises_when_missing(monkeypatch):
+    _clear_client_cache()
 
-    # Ensure env var absent and pretend no .env exists anywhere
+    # remove env var and make every '.env' lookup fail
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    monkeypatch.setattr("pathlib.Path.exists", lambda *_: False)
+    monkeypatch.setattr(oc.Path, "exists", lambda *_: False)
 
     with pytest.raises(RuntimeError, match="OPENAI_API_KEY not found"):
-        oc._get_api_key()
+        oc._get_sdk_client()
 
 
-def test_get_client_is_cached(monkeypatch):
+# --------------------------------------------------------------------------- #
+# 3. _get_sdk_client is cached (constructor runs once)                         #
+# --------------------------------------------------------------------------- #
+def test_get_sdk_client_is_cached(monkeypatch):
+    _clear_client_cache()
 
-    # Stub OpenAI class so we can count constructor calls
     calls = {"n": 0}
 
     class FakeOpenAI(SimpleNamespace):
@@ -58,8 +78,8 @@ def test_get_client_is_cached(monkeypatch):
 
     monkeypatch.setenv("OPENAI_API_KEY", "dummy")
     with patch.object(oc, "OpenAI", FakeOpenAI):
-        c1 = oc._get_client()  # first call — should construct
-        c2 = oc._get_client()  # second call — cached
+        c1 = oc._get_sdk_client()  # first call – builds
+        c2 = oc._get_sdk_client()  # second call – cached
 
-    assert c1 is c2  # same object returned
-    assert calls["n"] == 1  # constructor invoked only once
+    assert c1 is c2
+    assert calls["n"] == 1
