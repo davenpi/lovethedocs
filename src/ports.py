@@ -28,6 +28,6 @@ class FileSystemPort(Protocol):
 
 
 class DiffViewerPort(Protocol):
-    """How the UI surfaces a diff.  Keeps any editor/tool details out of app code."""
+    """How the UI surfaces a diff. Keeps any editor/tool details out of app code."""
 
     def view(self, original: Path, improved: Path) -> None: ...

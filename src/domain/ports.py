@@ -1,4 +1,3 @@
-# src/domain/ports.py
 from typing import Protocol, TYPE_CHECKING
 
 if TYPE_CHECKING:

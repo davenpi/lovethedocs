@@ -1,4 +1,3 @@
-# src/gateways/project_file_system.py
 from pathlib import Path
 import shutil
 from typing import Dict
@@ -14,6 +13,14 @@ class ProjectFileSystem(FileSystemPort):
         self.staged_root = self.root / "_improved"
         self.backup_root = self.root / "_backups"
 
+    # ---------- internal guard ------------------------------------------- #
+    def _ensure_relative(self, rel_path: Path) -> None:
+        if rel_path.is_absolute():
+            raise ValueError(
+                f"FileSystemPort expects a path *relative* to the project "
+                f"root, got absolute path: {rel_path}"
+            )
+
     # ---------------------- read ------------------------------------------ #
     def load_modules(self) -> Dict[Path, str]:
         modules: Dict[Path, str] = {}
@@ -28,11 +35,13 @@ class ProjectFileSystem(FileSystemPort):
 
     # ---------------------- write ----------------------------------------- #
     def stage_file(self, rel_path: Path, code: str) -> None:
+        self._ensure_relative(rel_path)
         dest = self.staged_path(rel_path)
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(code, encoding="utf-8")
 
     def apply_stage(self, rel_path: Path) -> None:
+        self._ensure_relative(rel_path)
         orig = self.original_path(rel_path)
         staged = self.staged_path(rel_path)
 

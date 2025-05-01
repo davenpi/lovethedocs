@@ -11,16 +11,17 @@ def _write(p: Path, content: str):
     p.write_text(textwrap.dedent(content))
 
 
+# ---------- load_modules ------------------------------------------------- #
 def test_load_modules_basic_and_relative_paths():
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         _write(root / "pkg" / "alpha.py", "x = 1\n")
-        _write(root / "pkg" / "__init__.py", "# should be ignored\n")
+        _write(root / "pkg" / "__init__.py", "# ignored\n")
 
-        modules = load_modules(root)
+        fs = ProjectFileSystem(root)
+        modules = fs.load_modules()
 
-        # Only alpha.py should be present and path must be relative
-        assert modules == {"pkg/alpha.py": "x = 1\n"}
+        assert modules == {Path("pkg/alpha.py"): "x = 1\n"}
 
 
 def test_load_modules_ignores_virtualenv_dirs():
@@ -29,64 +30,51 @@ def test_load_modules_ignores_virtualenv_dirs():
         _write(root / "venv" / "lib" / "ignored.py", "x=99\n")
         _write(root / "beta.py", "y = 2\n")
 
-        modules = load_modules(root)
+        fs = ProjectFileSystem(root)
+        modules = fs.load_modules()
 
-        assert "beta.py" in modules
-        assert all("venv/" not in p for p in modules)
+        assert Path("beta.py") in modules
+        assert all("venv" not in p.parts for p in modules)  # path.parts not str
 
 
 def test_load_modules_preserves_blank_lines_and_unicode():
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
-        # Module has leading + trailing blank lines and a Unicode filename
         code = "\n\na = '✓'\n\n"
         _write(root / "naïve.py", code)
 
-        modules = load_modules(root)
+        fs = ProjectFileSystem(root)
+        modules = fs.load_modules()
 
-        assert modules["naïve.py"] == code  # exact match, no .strip()
+        assert modules[Path("naïve.py")] == code  # exact match
 
 
-def test_write_file_relative_explicit_root():
+# ---------- stage_file --------------------------------------------------- #
+def test_stage_file_relative_explicit_root():
     with tempfile.TemporaryDirectory() as tmp:
         project_root = Path(tmp) / "repo"
         (project_root / "src").mkdir(parents=True)
 
-        source = Path("src/alpha.py")  # relative path
-        code = "print('hello')"  # no trailing newline
+        rel_path = Path("src/alpha.py")
+        code = "print('hello')"
 
-        write_file(source, code, root=project_root)
+        fs = ProjectFileSystem(project_root)
+        fs.stage_file(rel_path, code)
 
-        dest = project_root / "_improved" / source
-        assert dest.is_file(), "destination file should exist"
-        assert (
-            dest.read_text(encoding="utf-8") == code
-        ), "file content should match the original code"
-
-
-def test_write_file_absolute_under_root():
-    with tempfile.TemporaryDirectory() as tmp:
-        project_root = Path(tmp) / "repo"
-        source_file = project_root / "pkg" / "beta.py"
-        source_file.parent.mkdir(parents=True, exist_ok=True)
-
-        code = "x = 1\n\n"  # two trailing newlines
-        source_file.write_text(code)
-
-        write_file(source_file, code, root=project_root)
-
-        dest = project_root / "_improved" / "pkg" / "beta.py"
-        assert (
-            dest.read_text() == "x = 1\n\n"
-        ), "Output file should match the original code"
+        dest = fs.staged_path(rel_path)
+        improved_root = project_root / "_improved"
+        assert dest == (improved_root.resolve()) / rel_path
+        assert dest.is_file()
+        assert dest.read_text(encoding="utf-8") == code
 
 
-def test_write_file_absolute_outside_root_raises():
+def test_stage_file_absolute_path_raises():
     with tempfile.TemporaryDirectory() as tmp:
         project_root = Path(tmp) / "repo"
         project_root.mkdir()
 
-        outside_file = Path(tmp) / "elsewhere.py"
+        abs_path = (project_root / "elsewhere.py").resolve()
+        fs = ProjectFileSystem(project_root)
 
         with pytest.raises(ValueError):
-            write_file(outside_file, "pass", root=project_root)
+            fs.stage_file(abs_path, "pass")
