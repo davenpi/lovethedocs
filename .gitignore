@@ -36,3 +36,6 @@ evals/
 # distribution
 dist/
 *.egg-info/
+
+# errors
+errors/
