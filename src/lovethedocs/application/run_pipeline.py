@@ -13,6 +13,7 @@ services and the DocumentationUpdateUseCase.  This module only
 from __future__ import annotations
 
 import logging
+from functools import lru_cache
 from pathlib import Path
 from typing import Callable, Sequence, Union
 
@@ -87,27 +88,27 @@ def _summarize_failures(failures: list[tuple[Path, Exception]], processed: int) 
     )
 
 
-# --------------------------------------------------------------------------- #
-#  One-time construction of the pure, stateless services                      #
-# --------------------------------------------------------------------------- #
-cfg = config.Settings()
+@lru_cache
+def _make_use_case() -> DocumentationUpdateUseCase:
+    cfg = config.Settings()
 
-doc_style = docstyle.DocStyle.from_string(cfg.doc_style)
-openai_client = OpenAIClientAdapter(
-    model=cfg.model,
-    style=doc_style,
-)
-edit_generator = ModuleEditGenerator(
-    client=openai_client,
-    validator=schema_loader.VALIDATOR,
-    mapper=mappers.map_json_to_module_edit,
-)
-_BUILDER = PromptBuilder(PromptTemplateRepository())
-_USES = DocumentationUpdateUseCase(
-    builder=_BUILDER,
-    generator=edit_generator,
-    patcher=ModulePatcher(),
-)
+    doc_style = docstyle.DocStyle.from_string(cfg.doc_style)
+    openai_client = OpenAIClientAdapter(
+        model=cfg.model,
+        style=doc_style,
+    )
+    edit_generator = ModuleEditGenerator(
+        client=openai_client,
+        validator=schema_loader.VALIDATOR,
+        mapper=mappers.map_json_to_module_edit,
+    )
+    _BUILDER = PromptBuilder(PromptTemplateRepository())
+    _USES = DocumentationUpdateUseCase(
+        builder=_BUILDER,
+        generator=edit_generator,
+        patcher=ModulePatcher(),
+    )
+    return _USES
 
 
 # --------------------------------------------------------------------------- #
@@ -117,7 +118,7 @@ def run_pipeline(
     paths: Union[str | Path, Sequence[str | Path]],
     *,
     fs_factory: Callable[[Path], ProjectFileSystem] = utils.fs_factory,
-    use_case: DocumentationUpdateUseCase = _USES,
+    use_case_factory: Callable[[], DocumentationUpdateUseCase] = _make_use_case,
 ) -> list[ProjectFileSystem]:
     """
     High-level CLI entry: update documentation for every *.py file under *paths*.
@@ -128,11 +129,16 @@ def run_pipeline(
         One or more files / directories.  Mixed input is allowed.
     fs_factory
         Factory that returns a `ProjectFileSystem` given the project root.
-    use_case
-        Pre-wired instance of `DocumentationUpdateUseCase`.
+    use_case_factory
+        Factory that returns a `DocumentationUpdateUseCase` instance.
     review_diffs
         Open diffs for interactive review when ``True``.
     """
+    # -- TODO: REFACTOR ------
+    cfg = config.Settings()
+    doc_style = docstyle.DocStyle.from_string(cfg.doc_style)
+    use_case = use_case_factory()
+
     # Normalise input --------------------------------------------------------
     if isinstance(paths, (str, Path)):
         paths = [paths]  # type: ignore[list-item]

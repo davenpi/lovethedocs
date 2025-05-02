@@ -5,9 +5,7 @@ Concrete adapter that satisfies `LLMClientPort`.
 from __future__ import annotations
 
 import json
-import os
 from functools import lru_cache
-from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
@@ -24,19 +22,14 @@ from .schema_loader import _RAW_SCHEMA
 # --------------------------------------------------------------------------- #
 @lru_cache(maxsize=1)
 def _get_sdk_client() -> OpenAI:
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:  # fallback → .env search
-        project_root = Path(__file__).resolve().parents[1]
-        for candidate in (project_root / ".env", project_root.parent / ".env"):
-            if candidate.exists():
-                load_dotenv(candidate)
-                api_key = os.getenv("OPENAI_API_KEY")
-                break
-    if not api_key:
+    load_dotenv()
+    try:
+        return OpenAI()
+    except ValueError:
         raise RuntimeError(
-            "OPENAI_API_KEY not found in env or .env file at project root."
+            "OpenAI API key missing. Set OPENAI_API_KEY or place a .env file containing"
+            " it in the working directory."
         )
-    return OpenAI(api_key=api_key)
 
 
 _PROMPTS = PromptTemplateRepository()  # cache inside class below
