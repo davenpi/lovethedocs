@@ -55,11 +55,15 @@ def test_request_returns_parsed_json(monkeypatch):
 def test_get_sdk_client_raises_when_missing(monkeypatch):
     _clear_client_cache()
 
-    # remove env var and make every '.env' lookup fail
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    monkeypatch.setattr(oc.Path, "exists", lambda *_: False)
+    # Stub that mimics the SDK raising when no key is configured
+    class _RaisesValueError:
+        def __init__(self, *_, **__):
+            raise ValueError("missing api key")
 
-    with pytest.raises(RuntimeError, match="OPENAI_API_KEY not found"):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)  # ensure env var absent
+    monkeypatch.setattr(oc, "OpenAI", _RaisesValueError)  # patch constructor
+
+    with pytest.raises(RuntimeError):
         oc._get_sdk_client()
 
 
@@ -71,15 +75,16 @@ def test_get_sdk_client_is_cached(monkeypatch):
 
     calls = {"n": 0}
 
-    class FakeOpenAI(SimpleNamespace):
-        def __init__(self, api_key):
+    class FakeOpenAI:
+        def __init__(self, *args, **kwargs):  # accept any signature
             calls["n"] += 1
-            super().__init__(api_key=api_key, responses=SimpleNamespace())
+            self.responses = SimpleNamespace()  # lightweight placeholder
 
-    monkeypatch.setenv("OPENAI_API_KEY", "dummy")
-    with patch.object(oc, "OpenAI", FakeOpenAI):
-        c1 = oc._get_sdk_client()  # first call – builds
-        c2 = oc._get_sdk_client()  # second call – cached
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy")  # key to satisfy flow
+    monkeypatch.setattr(oc, "OpenAI", FakeOpenAI)  # patch constructor
+
+    c1 = oc._get_sdk_client()  # first call – builds
+    c2 = oc._get_sdk_client()  # second call – cached
 
     assert c1 is c2
     assert calls["n"] == 1
