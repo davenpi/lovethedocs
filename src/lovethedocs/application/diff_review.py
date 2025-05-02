@@ -32,9 +32,28 @@ def _review_single(
     interactive: bool = True,
 ) -> bool:
     """
-    Show the diff; if accepted, back up + overwrite the original file.
+    Display the diff for a single file and optionally apply the staged changes.
 
-    Returns True when the change was applied.
+    Shows the diff between the original and staged file using the provided diff viewer.
+    If interactive mode is enabled, prompts the user to accept or reject the changes.
+    If accepted, backs up and overwrites the original file with the staged version.
+
+    Parameters
+    ----------
+    fs : ProjectFileSystem
+        The project file system gateway for file operations.
+    rel_path : Path
+        The relative path to the file being reviewed.
+    diff_viewer : DiffViewerPort
+        The diff viewer used to display file differences.
+    interactive : bool, optional
+        If True, prompt the user for acceptance; otherwise, do not apply changes
+        (default is True).
+
+    Returns
+    -------
+    bool
+        True if the change was accepted and applied, False otherwise.
     """
     original = fs.original_path(rel_path)
     staged = fs.staged_path(rel_path)
@@ -62,8 +81,25 @@ def batch_review(
     interactive: bool = True,
 ) -> None:
     """
-    Walk every staged *.py* file and pipe it through `_review_single`,
-    tallying the results.
+    Review all staged Python files and summarize the results.
+
+    Walks through every staged Python (*.py) file, displaying diffs and prompting for
+    acceptance if interactive. Tallies the number of accepted and rejected changes, and
+    prints a summary panel at the end.
+
+    Parameters
+    ----------
+    fs : ProjectFileSystem
+        The project file system gateway for file operations.
+    diff_viewer : DiffViewerPort
+        The diff viewer used to display file differences.
+    interactive : bool, optional
+        If True, prompt the user for acceptance; otherwise, do not apply changes
+        (default is True).
+
+    Returns
+    -------
+    None
     """
     staged_files = list(fs.staged_root.glob("**/*.py"))
     if not staged_files:

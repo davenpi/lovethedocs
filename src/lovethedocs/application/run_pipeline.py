@@ -49,7 +49,17 @@ console = Console()
 
 
 def _make_progress() -> Progress:
-    """A two-line, colour-blind-friendly progress bar."""
+    """
+    Create and return a two-line, color-blind-friendly progress bar.
+
+    The progress bar uses a spinner, colored text, a green bar, task progress, and elapsed time.
+    It is configured to clear itself when finished.
+
+    Returns
+    -------
+    Progress
+        A configured Rich Progress instance for tracking tasks.
+    """
     return Progress(
         SpinnerColumn(style="yellow"),
         TextColumn("[bold blue]{task.description}"),
@@ -62,6 +72,19 @@ def _make_progress() -> Progress:
 
 
 def _summarize_failures(failures: list[tuple[Path, Exception]], processed: int) -> None:
+    """
+    Display a summary of failed and successful module updates.
+
+    Prints a green panel if there are no failures. Otherwise, prints a table of failed modules
+    and their associated errors, and logs each failure.
+
+    Parameters
+    ----------
+    failures : list of tuple[Path, Exception]
+        List of (module path, exception) pairs for failed updates.
+    processed : int
+        Total number of modules processed.
+    """
     if not failures:
         console.print(
             Panel.fit(
@@ -90,6 +113,17 @@ def _summarize_failures(failures: list[tuple[Path, Exception]], processed: int) 
 
 @lru_cache
 def _make_use_case() -> DocumentationUpdateUseCase:
+    """
+    Create and return a configured DocumentationUpdateUseCase instance.
+
+    Initializes configuration, doc style, OpenAI client, edit generator, prompt
+    builder, and patcher, then assembles the use case object.
+
+    Returns
+    -------
+    DocumentationUpdateUseCase
+        The fully configured use case for updating documentation.
+    """
     cfg = config.Settings()
 
     doc_style = docstyle.DocStyle.from_string(cfg.doc_style)
@@ -121,18 +155,25 @@ def run_pipeline(
     use_case_factory: Callable[[], DocumentationUpdateUseCase] = _make_use_case,
 ) -> list[ProjectFileSystem]:
     """
-    High-level CLI entry: update documentation for every *.py file under *paths*.
+    Update documentation for all Python files under the given paths.
+
+    Normalizes input paths, loads files using the provided file system factory, runs
+    the documentation update use case, stages updated files, and displays progress and
+    a summary.
 
     Parameters
     ----------
-    paths
-        One or more files / directories.  Mixed input is allowed.
-    fs_factory
-        Factory that returns a `ProjectFileSystem` given the project root.
-    use_case_factory
-        Factory that returns a `DocumentationUpdateUseCase` instance.
-    review_diffs
-        Open diffs for interactive review when ``True``.
+    paths : str, Path, or Sequence of (str or Path)
+        One or more files or directories to process. Mixed input is allowed.
+    fs_factory : Callable[[Path], ProjectFileSystem], optional
+        Factory function that returns a ProjectFileSystem for a given project root.
+    use_case_factory : Callable[[], DocumentationUpdateUseCase], optional
+        Factory function that returns a DocumentationUpdateUseCase instance.
+
+    Returns
+    -------
+    list[ProjectFileSystem]
+        List of file system adapters used for the processed projects.
     """
     # -- TODO: REFACTOR ------
     cfg = config.Settings()

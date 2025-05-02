@@ -5,9 +5,9 @@ def map_json_to_module_edit(json_data: dict) -> ModuleEdit:
     """
     Convert a JSON dictionary to a ModuleEdit instance.
 
-    Parses the input dictionary, extracting function and class edit specifications, and
-    constructs a ModuleEdit object with the corresponding FunctionEdit and ClassEdit
-    instances.
+    Parses the input dictionary to extract function and class edit specifications, then
+    constructs a ModuleEdit object containing the corresponding FunctionEdit and
+    ClassEdit instances.
 
     Parameters
     ----------
