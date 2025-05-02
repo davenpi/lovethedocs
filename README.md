@@ -1,64 +1,100 @@
 # LoveTheDocs
 
-Enhance Python docs with AI to make your code more understandable, maintainable,
-and useful.
+Automatically enhance your Python documentation to make your code more understandable,
+maintainable, and useful.
 
-## 🌟 Why LoveTheDocs?
+## 🚀 Why LoveTheDocs?
 
-Good documentation is essential for at least two reasons:
+### Save Developer Time and Money
 
-1. **Developer Experience**: Quality documentation leads to higher quality code written in less time. Developers spend less time figuring out how libraries work and more time building.
+- **Reduce Documentation Overhead**: Generate high-quality docstrings in seconds
+  instead of spending hours manually writing/re-writing them.
+- **Cost-Effective**: Improve your entire codebase's documentation for pennies (just
+  the cost of model inference) rather than days of developer time.
+- **Consistent Style**: Enforce NumPy-style documentation conventions across your
+  entire codebase automatically.
 
-2. **AI Integration**: LLMs are increasingly important consumers of documentation. The quality of AI assistance depends directly on the quality of the documentation it reads.
+### Improve Code Quality
 
-## 🚀 Quick Start
+- **Better Readability**: Well-documented code is easier to understand, modify, and
+  debug
+- **Faster Onboarding**: New team members can quickly grasp your codebase with clear
+  documentation
+- **Clearer Intentions**: Explicit parameter types and descriptions reveal the purpose
+  of your code
 
-LoveTheDocs is not yet available on PyPI. To use it:
+### The future!
 
-1. Clone the repository:
+- **Better AI Integration**: High-quality documentation improves how LLMs understand
+  your code
+- **Enhanced Tooling**: Better docstrings improve IDE completion, type checking, and
+  further documentation generation
+- **Maintainability**: Clear documentation reduces technical debt and makes future
+  changes easier
 
-   ```bash
-   git clone https://github.com/davenpi/lovethedocs.git
-   cd lovethedocs
-   ```
+## 📦 Installation
 
-2. Install dependencies:
+Install directly from PyPI:
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+pip install lovethedocs
+```
 
-3. Set up your OpenAI API key:
+Configure your OpenAI API key:
 
-   ```bash
-   # Create a .env file in the project root
-   echo "OPENAI_API_KEY=your-api-key-here" > .env
-   ```
+```bash
+# Export in your shell
+export OPENAI_API_KEY=your-api-key-here
 
-4. Run LoveTheDocs on your Python project:
+# Or add to a .env file in your project root
+echo "OPENAI_API_KEY=your-api-key-here" > .env
+```
 
-   ```bash
-   # Using the provided alias (recommended)
-   source .aliases
-   lovethedocs path/to/your/python/code
+## 🔧 Usage
 
-   # Or run directly
-   python -m lovethedocs.cli.lovethedocs path/to/your/python/code
-   ```
+LoveTheDocs offers a simple command-line interface with two main commands:
 
-5. Find improved documentation in the `_improved` directory.
+### Generate Documentation
+
+```bash
+# Update documentation for a single file
+lovethedocs update path/to/your/file.py
+
+# Update documentation for an entire directory
+lovethedocs update path/to/your/project/
+
+# Update multiple paths at once
+lovethedocs update path/one/ path/two/ path/three/file.py
+```
+
+### Review and Apply Changes
+
+```bash
+# Review generated documentation changes (opens in VS Code diff view)
+lovethedocs review path/to/your/project/
+
+# Generate and immediately review changes
+lovethedocs update path/to/your/project/ --review
+```
+
+All improved files are staged in a `.lovethedocs/improved/` directory within your
+project. For example, if you run `lovethedocs update path/to/your/code/`, the updated
+versions will be stored in `path/to/your/code/.lovethedocs/improved/.` When you accept
+changes during review, original files are backed up to
+`path/to/your/code/.lovethedocs/backups/`.
 
 ## 🔍 How It Works
 
 LoveTheDocs:
 
-1. Analyzes your Python codebase
-2. Extracts class and function information
-3. Uses AI (for now Open AI models) to generate improved docstrings in NumPy style
-4. Updates your code with the enhanced documentation
-5. Formats the result with black
+1. Analyzes your Python codebase with LibCST
+2. Extracts function and class information
+3. Uses LLMs to generate improved docstrings in NumPy style (more styles coming).
+4. Updates your code with enhanced documentation
+5. Presents changes for your review and approval
 
-The result is consistent, comprehensive documentation with a lot less effort.
+The process is non-destructive - you maintain complete control over which changes to
+accept.
 
 ## 🎯 Example
 
@@ -102,71 +138,40 @@ def process_data(data: list, threshold: float) -> list:
 
 ## 🛣️ Development Roadmap
 
-### Foundation (Current Focus)
+### Currently Working On
 
-#### User Experience Improvements
+- Asynchronous model requests for faster processing
+- Diff review in more editors than VS Code.
+- Support for additional documentation styles (Google, reStructuredText)
+- Multiple model provider support (Google, Anthropic, etc.)
+- Improved CLI interface with better error handling
 
-- [ ] Add asynchronous model requests for faster processing
-- [ ] Create scripts to automatically view and incorporate diffs
-- [ ] Improve CLI interface with progress indication and better error handling
-- [ ] Add support for configuration files to customize behavior
+### Future Plans
 
-#### Architecture Enhancements
-
-- [ ] Improve core/domain logic. Extend domain services for clarity.
-- [ ] Add support for multiple model providers (Anthropic + Open AI)
-- [ ] Implement adaptable documentation style templates (NumPy vs. Google)
-- [ ] Improve module and package level documentation generation
-
-#### Evaluation and Telemetry
-
-- [ ] Create model evaluation pipeline to measure documentation quality
-- [ ] Iteratively refine prompting strategies based on quality metrics
-- [ ] Build telemetry system to track usage patterns and failure modes
-- [ ] Implement logging infrastructure for systematic performance analysis
-- [ ] Develop feedback mechanisms to improve future documentation
-
-#### Automation and Integration
-
-- [ ] Build GitHub action for automated documentation improvements
-- [ ] Create PR system for seamless code improvement integration
-- [ ] Add continuous integration hooks
-
-### Future Directions
-
-#### AI-Optimized Documentation
-
-- [ ] Research and develop documentation formats specifically designed for LLM consumption
-- [ ] Create exporters for compact schema representations of docstrings
-- [ ] Implement dual-format documentation that serves both human and AI readers
-- [ ] Build tools to analyze documentation information density and LLM comprehension
-
-#### Documentation Quality Assurance
-
-- [ ] Integrate doctest validation for all code examples
-- [ ] Implement automated repair of failing examples in documentation
-- [ ] Create validation pipelines for documentation correctness and completeness
-- [ ] Develop metrics for documentation quality beyond traditional coverage
+- Documentation styles specifically designed for LLM consumption
+- GitHub action for automated documentation improvements
+- Custom configuration files for fine-tuned behavior
+- Documentation quality metrics and evaluation
+- Support for package and module level documentation
+- Integration with common CI/CD pipelines
 
 ## 🧰 Technical Details
 
-LoveTheDocs uses a clean architecture with:
+Under the hood, LoveTheDocs uses:
 
-- Domain models for documentation edits
-- LibCST for code manipulation (no regex parsing!)
-- OpenAI GPT-4 with a specialized prompting strategy
-- Dependency injection for testability
+- A clean domain-driven architecture
+- LibCST for reliable code analysis (no regex parsing!)
+- AI-generated content with specialized prompting strategies
+- Comprehensive validation to ensure correct output
 
 ## 👥 Contributing
 
-Contributions to LoveTheDocs are welcome! The project is in its early stages, and I'm
-still figuring out the contribution process. If you're interested in contributing:
+Contributions are welcome! The project is in its early stages, and we're still figuring
+out the contribution process. If you're interested:
 
 - Open an issue to discuss ideas or report bugs
 - Submit pull requests for small fixes
-- For larger features, please reach out to me first at davenport.ianc@gmail.com
-
-Thanks!
+- Open up an issue for larger features.
 
 ## 📄 License
 
