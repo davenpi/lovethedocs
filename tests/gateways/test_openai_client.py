@@ -50,8 +50,9 @@ def test_request_returns_parsed_json(monkeypatch):
 
 
 # --------------------------------------------------------------------------- #
-# 2. _get_sdk_client raises if the API key is missing                          #
+# 2. _get_sdk_client raises if the API key is missing                         #
 # --------------------------------------------------------------------------- #
+# TODO: REFACTOR.
 def test_get_sdk_client_raises_when_missing(monkeypatch):
     _clear_client_cache()
 
@@ -68,8 +69,9 @@ def test_get_sdk_client_raises_when_missing(monkeypatch):
 
 
 # --------------------------------------------------------------------------- #
-# 3. _get_sdk_client is cached (constructor runs once)                         #
+# 3. _get_sdk_client is cached (constructor runs once)                        #
 # --------------------------------------------------------------------------- #
+# TODO: REFACTOR. Not handling errors correctly.
 def test_get_sdk_client_is_cached(monkeypatch):
     _clear_client_cache()
 
