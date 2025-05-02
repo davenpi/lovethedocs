@@ -28,19 +28,18 @@ from rich.progress import (
 )
 from rich.table import Table
 
-from src.application import logging_setup  # noqa: F401
-from src.application import config, mappers, utils
-from src.domain import docstyle
-from src.domain.models import SourceModule
-from src.domain.services import PromptBuilder
-from src.domain.services.generator import ModuleEditGenerator
-from src.domain.services.patcher import ModulePatcher
-from src.domain.templates import PromptTemplateRepository
-from src.domain.use_cases.update_docs import DocumentationUpdateUseCase
-from src.gateways import schema_loader
-from src.gateways.openai_client import OpenAIClientAdapter
-from src.gateways.project_file_system import ProjectFileSystem
-from src.gateways.vscode_diff_viewer import VSCodeDiffViewer
+from lovethedocs.application import logging_setup  # noqa: F401
+from lovethedocs.application import config, mappers, utils
+from lovethedocs.domain import docstyle
+from lovethedocs.domain.models import SourceModule
+from lovethedocs.domain.services import PromptBuilder
+from lovethedocs.domain.services.generator import ModuleEditGenerator
+from lovethedocs.domain.services.patcher import ModulePatcher
+from lovethedocs.domain.templates import PromptTemplateRepository
+from lovethedocs.domain.use_cases.update_docs import DocumentationUpdateUseCase
+from lovethedocs.gateways import schema_loader
+from lovethedocs.gateways.openai_client import OpenAIClientAdapter
+from lovethedocs.gateways.project_file_system import ProjectFileSystem
 
 # --------------------------------------------------------------------------- #
 #  Helpers                                                                    #

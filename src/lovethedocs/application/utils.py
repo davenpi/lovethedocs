@@ -5,7 +5,7 @@ Small helpers that aren't worth their own module yet.
 from pathlib import Path
 from typing import Callable, Optional
 
-from src.gateways.project_file_system import ProjectFileSystem
+from lovethedocs.gateways.project_file_system import ProjectFileSystem
 
 
 def apply_formatter(code: str, fmt: Optional[Callable[[str], str]] = None) -> str:

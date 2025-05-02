@@ -20,9 +20,9 @@ from typing import List
 import typer
 from rich.console import Console
 
-from src.application import diff_review, run_pipeline
-from src.gateways.project_file_system import ProjectFileSystem
-from src.gateways.vscode_diff_viewer import VSCodeDiffViewer
+from lovethedocs.application import diff_review, run_pipeline
+from lovethedocs.gateways.project_file_system import ProjectFileSystem
+from lovethedocs.gateways.vscode_diff_viewer import VSCodeDiffViewer
 
 # --------------------------------------------------------------------------- #
 #  Typer root application                                                     #

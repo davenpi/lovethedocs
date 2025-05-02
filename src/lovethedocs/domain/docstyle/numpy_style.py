@@ -1,4 +1,4 @@
-from src.domain.docstyle.base import DocStyle
+from lovethedocs.domain.docstyle.base import DocStyle
 
 
 class NumPyDocStyle(DocStyle):

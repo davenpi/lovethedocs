@@ -1,4 +1,4 @@
-from src.domain.models import ClassEdit, FunctionEdit, ModuleEdit
+from lovethedocs.domain.models import ClassEdit, FunctionEdit, ModuleEdit
 
 
 def map_json_to_module_edit(json_data: dict) -> ModuleEdit:

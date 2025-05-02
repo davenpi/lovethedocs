@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from typing import Callable
 
-from src.domain.models import ModuleEdit
-from src.domain.ports import JSONSchemaValidator, LLMClientPort
+from lovethedocs.domain.models import ModuleEdit
+from lovethedocs.domain.ports import JSONSchemaValidator, LLMClientPort
 
 # --------------------------------------------------------------------------- #
 #  Type aliases                                                               #

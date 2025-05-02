@@ -10,11 +10,11 @@ from __future__ import annotations
 
 from typing import Iterable, Iterator, Tuple
 
-from src.domain.docstyle.base import DocStyle
-from src.domain.models import SourceModule
-from src.domain.services import PromptBuilder
-from src.domain.services.generator import ModuleEditGenerator
-from src.domain.services.patcher import ModulePatcher
+from lovethedocs.domain.docstyle.base import DocStyle
+from lovethedocs.domain.models import SourceModule
+from lovethedocs.domain.services import PromptBuilder
+from lovethedocs.domain.services.generator import ModuleEditGenerator
+from lovethedocs.domain.services.patcher import ModulePatcher
 
 
 class DocumentationUpdateUseCase:

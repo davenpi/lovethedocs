@@ -12,8 +12,8 @@ from typing import Dict, List
 
 import pytest
 
-from src.domain.models import ModuleEdit, SourceModule
-from src.domain.use_cases.update_docs import DocumentationUpdateUseCase
+from lovethedocs.domain.models import ModuleEdit, SourceModule
+from lovethedocs.domain.use_cases.update_docs import DocumentationUpdateUseCase
 
 
 # --------------------------------------------------------------------------- #

@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from src.gateways import openai_client as oc
+from lovethedocs.gateways import openai_client as oc
 
 
 # --------------------------------------------------------------------------- #

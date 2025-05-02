@@ -1,5 +1,5 @@
 """
-Unit-tests for src.domain.services.prompt_builder.PromptBuilder
+Unit-tests for lovethedocs.domain.services.prompt_builder.PromptBuilder
 """
 
 from __future__ import annotations
@@ -10,8 +10,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from src.domain.models import SourceModule
-from src.domain.services.prompt_builder import PromptBuilder
+from lovethedocs.domain.models import SourceModule
+from lovethedocs.domain.services.prompt_builder import PromptBuilder
 
 
 # --------------------------------------------------------------------------- #

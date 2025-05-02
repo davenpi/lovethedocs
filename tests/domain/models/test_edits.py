@@ -1,6 +1,6 @@
 from dataclasses import asdict
 
-from src.domain.models import ClassEdit, FunctionEdit, ModuleEdit
+from lovethedocs.domain.models import ClassEdit, FunctionEdit, ModuleEdit
 
 
 def _make_function_edit(qualname):

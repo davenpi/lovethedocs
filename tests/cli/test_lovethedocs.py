@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from src.cli import lovethedocs
+from lovethedocs.cli import lovethedocs
 
 
 def test_cli_main_invokes_pipeline(monkeypatch):
@@ -17,7 +17,9 @@ def test_cli_main_invokes_pipeline(monkeypatch):
     def fake_run(paths, review_diffs=False):
         called["paths"] = paths
 
-    monkeypatch.setattr("src.cli.lovethedocs.run_pipeline.run_pipeline", fake_run)
+    monkeypatch.setattr(
+        "lovethedocs.cli.lovethedocs.run_pipeline.run_pipeline", fake_run
+    )
     monkeypatch.setattr(sys, "argv", ["lovethedocs", "pkg1", "pkg2"])
 
     # main should not raise and should forward the paths

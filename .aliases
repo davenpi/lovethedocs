@@ -1,2 +1,2 @@
 alias pytestcov="pytest --cov=src --cov-report=term-missing"
-alias lovethedocs="python -m src.cli.lovethedocs"
+alias lovethedocs="python -m lovethedocs.cli.lovethedocs"

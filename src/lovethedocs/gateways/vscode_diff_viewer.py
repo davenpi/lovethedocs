@@ -1,7 +1,7 @@
 import subprocess
 from pathlib import Path
 
-from src.ports import DiffViewerPort
+from lovethedocs.ports import DiffViewerPort
 
 
 class VSCodeDiffViewer(DiffViewerPort):

@@ -43,7 +43,7 @@ LoveTheDocs is not yet available on PyPI. To use it:
    lovethedocs path/to/your/python/code
 
    # Or run directly
-   python -m src.cli.lovethedocs path/to/your/python/code
+   python -m lovethedocs.cli.lovethedocs path/to/your/python/code
    ```
 
 5. Find improved documentation in the `_improved` directory.

@@ -27,9 +27,6 @@ old_src/
 experiments/
 evals/
 
-# json
-*.json
-
 # ruff
 *.ruff_cache/
 

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from src.application.run_pipeline import run_pipeline
+from lovethedocs.application.run_pipeline import run_pipeline
 
 
 # --------------------------------------------------------------------------- #

@@ -11,9 +11,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, Sequence
 
-from src.domain.docstyle.base import DocStyle  # type: ignore
-from src.domain.models import SourceModule
-from src.domain.templates import PromptTemplateRepository
+from lovethedocs.domain.docstyle.base import DocStyle  # type: ignore
+from lovethedocs.domain.models import SourceModule
+from lovethedocs.domain.templates import PromptTemplateRepository
 
 
 class PromptBuilder:

@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 from typing import Dict
 
-from src.ports import FileSystemPort
+from lovethedocs.ports import FileSystemPort
 
 IGNORED_DIRS = [
     ".bzr",

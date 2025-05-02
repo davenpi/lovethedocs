@@ -11,12 +11,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.gateways.project_file_system import ProjectFileSystem
-from src.ports import DiffViewerPort
-
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
+
+from lovethedocs.gateways.project_file_system import ProjectFileSystem
+from lovethedocs.ports import DiffViewerPort
 
 console = Console()
 

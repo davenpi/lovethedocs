@@ -1,5 +1,5 @@
 """
-Unit-tests for src.domain.models.source_module.SourceModule
+Unit-tests for lovethedocs.domain.models.source_module.SourceModule
 """
 
 from __future__ import annotations
@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from src.domain.models.source_module import SourceModule
+from lovethedocs.domain.models.source_module import SourceModule
 
 pytest.importorskip("libcst")  # ensure LibCST is available
 

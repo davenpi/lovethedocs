@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from src.gateways.project_file_system import ProjectFileSystem
+from lovethedocs.gateways.project_file_system import ProjectFileSystem
 
 
 def _write(p: Path, content: str):

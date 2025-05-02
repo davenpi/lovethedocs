@@ -1,5 +1,5 @@
 """
-Tests for src.domain.services.patcher.ModulePatcher.
+Tests for lovethedocs.domain.services.patcher.ModulePatcher.
 
 Goals
 -----
@@ -13,10 +13,10 @@ from __future__ import annotations
 
 import textwrap
 
-import pytest
+import pytest  # noqa: F401
 
-from src.domain.models import ClassEdit, FunctionEdit, ModuleEdit
-from src.domain.services.patcher import ModulePatcher
+from lovethedocs.domain.models import ClassEdit, FunctionEdit, ModuleEdit
+from lovethedocs.domain.services.patcher import ModulePatcher
 
 
 # --------------------------------------------------------------------- helpers

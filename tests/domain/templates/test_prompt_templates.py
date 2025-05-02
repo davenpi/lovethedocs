@@ -4,11 +4,9 @@ Tiny sanity-checks for PromptTemplateRepository.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
-from src.domain.templates.prompt_templates import (
+from lovethedocs.domain.templates.prompt_templates import (
     PromptTemplateRepository,
     UnknownStyleError,
 )

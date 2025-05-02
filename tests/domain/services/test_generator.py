@@ -1,5 +1,5 @@
 """
-Unit-tests for DocstringGeneratorService (src.domain.services.generator).
+Unit-tests for DocstringGeneratorService (lovethedocs.domain.services.generator).
 
 The service should
 1. call the client-factory exactly once with the style string,
@@ -17,8 +17,8 @@ from typing import Any
 
 import pytest
 
-from src.domain.models import ModuleEdit
-from src.domain.services.generator import ModuleEditGenerator
+from lovethedocs.domain.models import ModuleEdit
+from lovethedocs.domain.services.generator import ModuleEditGenerator
 
 
 # --------------------------------------------------------------------------- #

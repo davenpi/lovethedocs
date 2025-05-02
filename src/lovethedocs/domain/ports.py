@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
     # Only for type checking, not runtime
-    from src.domain.docstyle import DocStyle
+    from lovethedocs.domain.docstyle import DocStyle
 
 
 class LLMClientPort(Protocol):

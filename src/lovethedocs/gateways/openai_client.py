@@ -13,8 +13,8 @@ from typing import Any
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from src.domain.docstyle import DocStyle
-from src.domain.templates import PromptTemplateRepository
+from lovethedocs.domain.docstyle import DocStyle
+from lovethedocs.domain.templates import PromptTemplateRepository
 
 from .schema_loader import _RAW_SCHEMA
 
