@@ -4,17 +4,15 @@ Concrete adapter that satisfies `LLMClientPort`.
 
 from __future__ import annotations
 
-import os
 import json
 from functools import lru_cache
 from typing import Any
 
-from dotenv import load_dotenv, find_dotenv
+from dotenv import find_dotenv, load_dotenv
 from openai import OpenAI, OpenAIError
 
 from lovethedocs.domain.docstyle import DocStyle
 from lovethedocs.domain.templates import PromptTemplateRepository
-
 from lovethedocs.gateways.schema_loader import _RAW_SCHEMA
 
 
@@ -23,16 +21,15 @@ from lovethedocs.gateways.schema_loader import _RAW_SCHEMA
 # --------------------------------------------------------------------------- #
 @lru_cache(maxsize=1)
 def _get_sdk_client() -> OpenAI:
-    # Look for .env in CWD or any parent dir, mirroring how tools like Poetry do it
     load_dotenv(find_dotenv(usecwd=True), override=False)
 
     try:
-        return OpenAI()  # the SDK will read OPENAI_API_KEY from the env we just loaded
+        return OpenAI()
     except OpenAIError as err:
         raise RuntimeError(
             "OpenAI API key not found. Set OPENAI_API_KEY or add it to a .env file "
             "in your project root (or any parent directory)."
-            f" Original error: {err}"
+            f"\n\nOriginal error:\n{err}"
         ) from err
 
 
