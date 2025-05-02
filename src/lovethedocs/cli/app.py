@@ -27,7 +27,11 @@ from lovethedocs.gateways.vscode_diff_viewer import VSCodeDiffViewer
 # --------------------------------------------------------------------------- #
 #  Typer root application                                                     #
 # --------------------------------------------------------------------------- #
-app = typer.Typer(add_completion=False, help="LLM-powered documentation tool.")
+app = typer.Typer(
+    name="lovethedocs",
+    add_completion=False,
+    help="LLM-powered documentation tool.",
+)
 
 
 # --------------------------------------------------------------------------- #
@@ -51,7 +55,7 @@ def update(
 ) -> None:
     """
     Run the documentation-update pipeline and stage results under
-    `.lovethedocs/improved`.
+    `path/.lovethedocs/improved`.
     """
     file_systems = run_pipeline.run_pipeline(paths)
     if review:
