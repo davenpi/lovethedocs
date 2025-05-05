@@ -8,14 +8,15 @@ Usage examples
 
 Generate docs for two packages, then open diffs:
 
-    lovethedocs update src/ tests/
-    lovethedocs review src/ tests/
+    lovethedocs update src/
+    lovethedocs review src/
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import List
+import shutil
 
 import typer
 from rich.console import Console
@@ -42,6 +43,8 @@ example = (
     "lovethedocs update gateways/ application/      # stage edits only\n\n"
     "lovethedocs update -r gateways/                # stage and review\n\n"
 )
+
+
 @app.command(help="Generate improved docstrings and stage diffs.\n\n" + example)
 def update(
     paths: List[Path] = typer.Argument(
@@ -99,6 +102,55 @@ def review(
             diff_viewer=VSCodeDiffViewer(),
             interactive=interactive,
         )
+
+
+@app.command(help="Remove lovethedocs artifacts from a project.")
+def clean(
+    paths: List[Path] = typer.Argument(
+        ...,
+        exists=True,
+        resolve_path=True,
+        metavar="PATHS",
+        help="Project roots to purge (will delete .lovethedocs/*).",
+    ),
+    yes: bool = typer.Option(
+        False,
+        "-y",
+        "--yes",
+        help="Skip confirmation prompt.",
+    ),
+) -> None:
+    """
+    Examples
+    --------
+    # Remove staged edits only
+    lovethedocs clean .
+
+    # Skip confirmation prompt
+    lovethedocs clean . -y
+    """
+    for root in paths:
+        trash = [root / ".lovethedocs" ]
+        trash = [p for p in trash if p.exists()]
+
+        if not trash:
+            typer.echo(f"Nothing to clean in {root}.")
+            continue
+
+        if not yes:
+            names = ", ".join(str(p.relative_to(root)) for p in trash if p.exists())
+            if not typer.confirm(
+                f"The following will be deleted in {root}: {names}\n\n"
+                "Are you sure you want to proceed?",
+                abort=False,
+            ):
+                typer.echo(f"❌ Cleanup skipped for {root}.")
+                continue
+
+        for path in trash:
+            if path.exists():
+                shutil.rmtree(path)
+        typer.echo(f"🗑️  Cleaned up {root}")
 
 
 if __name__ == "__main__":

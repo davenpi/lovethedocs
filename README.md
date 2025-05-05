@@ -35,15 +35,16 @@ maintainable, and useful.
 ## Quick start
 
 ```bash
-pip install lovethedocs             # 1 Install
-export OPENAI_API_KEY=sk-...        # 2 Auth
-lovethedocs update -r path/         # 3 Generate + review
+pip install lovethedocs             # install
+export OPENAI_API_KEY=sk-...        # authenticate (or use a .env file)
+lovethedocs update -r path/         # generate & review docs in one step
+lovethedocs clean path/             # remove staged edits
 ```
 
-Or add the API Key to a `.env` file in your project root
+Or put the key in a `.env` file at your project root:
 
 ```bash
-echo "OPENAI_API_KEY=your-api-key-here" > .env
+echo "OPENAI_API_KEY=sk-..." > .env
 ```
 
 ## 🔧 Usage
