@@ -40,7 +40,7 @@ class ProjectFileSystem(FileSystemPort):
     def __init__(self, project_root: Path):
         self.root = project_root.resolve()
         self.ltd_root = self.root / ".lovethedocs"
-        self.staged_root = self.ltd_root / "improved"
+        self.staged_root = self.ltd_root / "staged"
         self.backup_root = self.ltd_root / "backups"
 
     # ---------- internal guard ------------------------------------------- #

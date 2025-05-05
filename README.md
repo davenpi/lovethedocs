@@ -32,21 +32,17 @@ maintainable, and useful.
 - **Maintainability**: Clear documentation reduces technical debt and makes future
   changes easier
 
-## 📦 Installation
-
-Install directly from PyPI:
+## Quick start
 
 ```bash
-pip install lovethedocs
+pip install lovethedocs             # 1 Install
+export OPENAI_API_KEY=sk-...        # 2 Auth
+lovethedocs update -r path/         # 3 Generate + review
 ```
 
-Configure your OpenAI API key:
+Or add the API Key to a `.env` file in your project root
 
 ```bash
-# Export in your shell
-export OPENAI_API_KEY=your-api-key-here
-
-# Or add to a .env file in your project root
 echo "OPENAI_API_KEY=your-api-key-here" > .env
 ```
 
@@ -74,14 +70,14 @@ lovethedocs update path/one/ path/two/ path/three/file.py
 lovethedocs review path/to/your/project/
 
 # Generate and immediately review changes
-lovethedocs update path/to/your/project/ --review
+lovethedocs update path/to/your/project/ -r
 ```
 
-All improved files are staged in a `.lovethedocs/improved/` directory within your
-project. For example, if you run `lovethedocs update path/to/your/code/`, the updated
-versions will be stored in `path/to/your/code/.lovethedocs/improved/.` When you accept
+All new files are staged in a `.lovethedocs/staged/` directory within your
+project. For example, if you run `lovethedocs update path/`, the updated
+versions will be stored in `path/.lovethedocs/staged/.` When you accept
 changes during review, original files are backed up to
-`path/to/your/code/.lovethedocs/backups/`.
+`path/.lovethedocs/backups/`.
 
 ## 🔍 How It Works
 
@@ -89,8 +85,8 @@ LoveTheDocs:
 
 1. Analyzes your Python codebase with LibCST
 2. Extracts function and class information
-3. Uses LLMs to generate improved docstrings in NumPy style (more styles coming).
-4. Updates your code with enhanced documentation
+3. Uses LLMs to generate docstrings in NumPy style (more styles coming).
+4. Updates your code with LLM generated documentation
 5. Presents changes for your review and approval
 
 The process is non-destructive - you maintain complete control over which changes to
@@ -140,20 +136,17 @@ def process_data(data: list, threshold: float) -> list:
 
 ### Currently Working On
 
-- Asynchronous model requests for faster processing
-- Diff review in more editors than VS Code.
-- Support for additional documentation styles (Google, reStructuredText)
-- Multiple model provider support (Google, Anthropic, etc.)
-- Improved CLI interface with better error handling
+- **Latency**: Asynchronous model requests
+- **UX**: Smaller diffs and more diff reviewers
+- **Style**: More doc styles (Google, reStructuredText)
+- **Providers**: More model providers (Google, Anthropic, etc.)
+- **Error handling**: Improved CLI interface with better error handling
 
 ### Future Plans
 
-- Documentation styles specifically designed for LLM consumption
-- GitHub action for automated documentation improvements
-- Custom configuration files for fine-tuned behavior
-- Documentation quality metrics and evaluation
-- Support for package and module level documentation
-- Integration with common CI/CD pipelines
+- **LLM optimized docs**: Give context with the fewest tokens.
+- **Automation**: Integration with common CI/CD pipelines
+- **Metrics**: Quality metrics and evals.
 
 ## 🧰 Technical Details
 
