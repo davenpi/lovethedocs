@@ -24,39 +24,40 @@ from lovethedocs.application import diff_review, run_pipeline
 from lovethedocs.gateways.project_file_system import ProjectFileSystem
 from lovethedocs.gateways.vscode_diff_viewer import VSCodeDiffViewer
 
-# --------------------------------------------------------------------------- #
-#  Typer root application                                                     #
-# --------------------------------------------------------------------------- #
 app = typer.Typer(
     name="lovethedocs",
-    add_completion=False,
-    help="LLM-powered documentation tool.",
+    add_completion=True,
+    help=(
+        "Improve Python docstrings with help from an LLM.\n\n"
+        "Typical workflow:\n\n"
+        "lovethedocs update <path>    # call the LLM to update docs \n\n"
+        "lovethedocs review <path>    # open diffs in your viewer\n\n"
+        "lovethedocs update -r <path> # update & review in one step\n\n"
+    ),
 )
 
-
-# --------------------------------------------------------------------------- #
-#  `update` – generate / stage edits                                          #
-# --------------------------------------------------------------------------- #
-@app.command()
+example = (
+    "Examples\n\n"
+    "--------\n\n"
+    "lovethedocs update gateways/ application/      # stage edits only\n\n"
+    "lovethedocs update -r gateways/                # stage and review\n\n"
+)
+@app.command(help="Generate improved docstrings and stage diffs.\n\n" + example)
 def update(
     paths: List[Path] = typer.Argument(
         ...,
         exists=True,
         resolve_path=True,
         metavar="PATHS",
-        help="Files or directories whose Python sources should be documented.",
+        help="Project roots or package paths to process.",
     ),
     review: bool = typer.Option(
         False,
-        "--review",
         "-r",
-        help="Immediately open diffs after generation.",
+        "--review",
+        help="Open diffs immediately after generation.",
     ),
 ) -> None:
-    """
-    Run the documentation-update pipeline and stage results under
-    `path/.lovethedocs/improved`.
-    """
     file_systems = run_pipeline.run_pipeline(paths)
     if review:
         console = Console()
@@ -69,9 +70,6 @@ def update(
             )
 
 
-# --------------------------------------------------------------------------- #
-#  `review` – inspect staged edits                                            #
-# --------------------------------------------------------------------------- #
 @app.command()
 def review(
     paths: List[Path] = typer.Argument(
