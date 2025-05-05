@@ -37,8 +37,8 @@ maintainable, and useful.
 ```bash
 pip install lovethedocs             # install
 export OPENAI_API_KEY=sk-...        # authenticate (or use a .env file)
-lovethedocs update -r path/         # generate & review docs in one step
-lovethedocs clean path/             # remove staged edits
+lovethedocs update -r path/         # generate → review (auto-detects your diff viewer)
+lovethedocs clean path/             # wipe staged edits
 ```
 
 Or put the key in a `.env` file at your project root:
@@ -52,7 +52,6 @@ echo "OPENAI_API_KEY=sk-..." > .env
 LoveTheDocs offers a simple command-line interface with two main commands:
 
 ### Generate Documentation
-
 ```bash
 # Update documentation for a single file
 lovethedocs update path/to/your/file.py
@@ -64,14 +63,20 @@ lovethedocs update path/to/your/project/
 lovethedocs update path/one/ path/two/ path/three/file.py
 ```
 
-### Review and Apply Changes
+lovethedocs tries viewers in this order:
+1.	code (VS Code / VSCodium)
+2.	git (git diff --no-index)
+3.	Colourised terminal diff
+
+
+Override with -v/--viewer:
 
 ```bash
-# Review generated documentation changes (opens in VS Code diff view)
-lovethedocs review path/to/your/project/
+# Use Git’s difftool
+lovethedocs review path/ -v git
 
-# Generate and immediately review changes
-lovethedocs update path/to/your/project/ -r
+# Force terminal output
+lovethedocs update -r path/ -v terminal
 ```
 
 All new files are staged in a `.lovethedocs/staged/` directory within your

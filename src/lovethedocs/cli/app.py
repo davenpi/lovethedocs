@@ -14,16 +14,16 @@ Generate docs for two packages, then open diffs:
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 from typing import List
-import shutil
 
 import typer
 from rich.console import Console
 
 from lovethedocs.application import diff_review, run_pipeline
+from lovethedocs.gateways.diff_viewers import resolve_viewer
 from lovethedocs.gateways.project_file_system import ProjectFileSystem
-from lovethedocs.gateways.vscode_diff_viewer import VSCodeDiffViewer
 
 app = typer.Typer(
     name="lovethedocs",
@@ -60,15 +60,22 @@ def update(
         "--review",
         help="Open diffs immediately after generation.",
     ),
+    viewer: str = typer.Option(
+        "auto",
+        "-v",
+        "--viewer",
+        help="Diff viewer to use (auto, vscode, git, terminal).",
+    ),
 ) -> None:
     file_systems = run_pipeline.run_pipeline(paths)
+    selected_viewer = resolve_viewer(viewer)
     if review:
         console = Console()
         console.rule("[bold magenta]Reviewing documentation updates")
         for fs in file_systems:
             diff_review.batch_review(
                 fs,
-                diff_viewer=VSCodeDiffViewer(),
+                diff_viewer=selected_viewer,
                 interactive=True,
             )
 
@@ -85,12 +92,19 @@ def review(
     interactive: bool = typer.Option(
         True,
         "--interactive/--no-interactive",
-        help="Prompt before moving to the next diff (default: interactive).",
+        help="Prompt before moving to the next diff.",
+    ),
+    viewer: str = typer.Option(
+        "auto",
+        "-v",
+        "--viewer",
+        help="Diff viewer to use (auto, vscode, git, terminal).",
     ),
 ) -> None:
     """
-    Open staged edits in your diff viewer (VS Code by default).
+    Open staged edits in your chosen diff viewer (auto-detect by default).
     """
+    selected_viewer = resolve_viewer(viewer)
     for root in paths:
         fs = ProjectFileSystem(root)
         if not fs.staged_root.exists():
@@ -99,7 +113,7 @@ def review(
 
         diff_review.batch_review(
             fs,
-            diff_viewer=VSCodeDiffViewer(),
+            diff_viewer=selected_viewer,
             interactive=interactive,
         )
 
@@ -111,7 +125,7 @@ def clean(
         exists=True,
         resolve_path=True,
         metavar="PATHS",
-        help="Project roots to purge (will delete .lovethedocs/*).",
+        help="Project roots to purge (will delete path/.lovethedocs/*).",
     ),
     yes: bool = typer.Option(
         False,
@@ -130,7 +144,7 @@ def clean(
     lovethedocs clean . -y
     """
     for root in paths:
-        trash = [root / ".lovethedocs" ]
+        trash = [root / ".lovethedocs"]
         trash = [p for p in trash if p.exists()]
 
         if not trash:
