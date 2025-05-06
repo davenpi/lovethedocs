@@ -12,6 +12,7 @@ services and the DocumentationUpdateUseCase.  This module only
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from functools import lru_cache
 from pathlib import Path
@@ -39,7 +40,10 @@ from lovethedocs.domain.services.patcher import ModulePatcher
 from lovethedocs.domain.templates import PromptTemplateRepository
 from lovethedocs.domain.use_cases.update_docs import DocumentationUpdateUseCase
 from lovethedocs.gateways import schema_loader
-from lovethedocs.gateways.openai_client import OpenAIClientAdapter
+from lovethedocs.gateways.openai_client import (
+    AsyncOpenAIClientAdapter,
+    OpenAIClientAdapter,
+)
 from lovethedocs.gateways.project_file_system import ProjectFileSystem
 
 # --------------------------------------------------------------------------- #
@@ -112,7 +116,7 @@ def _summarize_failures(failures: list[tuple[Path, Exception]], processed: int) 
 
 
 @lru_cache
-def _make_use_case() -> DocumentationUpdateUseCase:
+def _make_use_case(*, async_mode: bool = False) -> DocumentationUpdateUseCase:
     """
     Create and return a configured DocumentationUpdateUseCase instance.
 
@@ -127,12 +131,13 @@ def _make_use_case() -> DocumentationUpdateUseCase:
     cfg = config.Settings()
 
     doc_style = docstyle.DocStyle.from_string(cfg.doc_style)
-    openai_client = OpenAIClientAdapter(
+    Client = AsyncOpenAIClientAdapter if async_mode else OpenAIClientAdapter
+    client = Client(
         model=cfg.model,
         style=doc_style,
     )
     edit_generator = ModuleEditGenerator(
-        client=openai_client,
+        client=client,
         validator=schema_loader.VALIDATOR,
         mapper=mappers.map_json_to_module_edit,
     )
@@ -146,47 +151,81 @@ def _make_use_case() -> DocumentationUpdateUseCase:
 
 
 # --------------------------------------------------------------------------- #
-#  Public adapter                                                             #
+#  Async adapter                                                              #
 # --------------------------------------------------------------------------- #
-def run_pipeline(
-    paths: Union[str | Path, Sequence[str | Path]],
+async def _run_pipeline_async(
     *,
-    fs_factory: Callable[[Path], ProjectFileSystem] = utils.fs_factory,
-    use_case_factory: Callable[[], DocumentationUpdateUseCase] = _make_use_case,
+    paths: Union[str | Path, Sequence[str | Path]],
+    concurrency: int,
+    doc_style: docstyle.DocStyle,
+    fs_factory: Callable[[Path], ProjectFileSystem],
+    use_case: DocumentationUpdateUseCase,
 ) -> list[ProjectFileSystem]:
-    """
-    Update documentation for all Python files under the given paths.
+    """Mirror of run_pipeline that uses the async use-case."""
+    # — normalize input -----------------------------------------------------
+    if isinstance(paths, (str, Path)):
+        _paths = [paths]  # type: ignore[list-item]
+    else:
+        _paths = list(paths)
 
-    Normalizes input paths, loads files using the provided file system factory, runs
-    the documentation update use case, stages updated files, and displays progress and
-    a summary.
+    failures: list[tuple[Path, Exception]] = []
+    processed = 0
+    file_systems: list[ProjectFileSystem] = []
 
-    Parameters
-    ----------
-    paths : str, Path, or Sequence of (str or Path)
-        One or more files or directories to process. Mixed input is allowed.
-    fs_factory : Callable[[Path], ProjectFileSystem], optional
-        Factory function that returns a ProjectFileSystem for a given project root.
-    use_case_factory : Callable[[], DocumentationUpdateUseCase], optional
-        Factory function that returns a DocumentationUpdateUseCase instance.
+    with _make_progress() as progress:
+        proj_task = progress.add_task("Projects", total=len(_paths))
 
-    Returns
-    -------
-    list[ProjectFileSystem]
-        List of file system adapters used for the processed projects.
-    """
-    # -- TODO: REFACTOR ------
-    cfg = config.Settings()
-    doc_style = docstyle.DocStyle.from_string(cfg.doc_style)
-    use_case = use_case_factory()
+        for raw in _paths:
+            root = Path(raw).resolve()
 
+            # establish a project-scoped FS adapter
+            if root.is_file() and root.suffix == ".py":
+                fs = fs_factory(root.parent)
+                module_map = {root.relative_to(root.parent): root.read_text("utf-8")}
+            elif root.is_dir():
+                fs = fs_factory(root)
+                module_map = fs.load_modules()
+            else:
+                logging.warning("Skipping %s (not a directory or .py file)", raw)
+                progress.advance(proj_task)
+                continue
+
+            src_modules = [SourceModule(p, c) for p, c in module_map.items()]
+            mod_task = progress.add_task(f"[cyan]{root.name}", total=len(src_modules))
+
+            async for mod, new_code in use_case.run_async(
+                src_modules, style=doc_style, concurrency=concurrency
+            ):
+                rel_path = mod.path if isinstance(mod.path, Path) else Path(mod.path)
+                try:
+                    fs.stage_file(rel_path, new_code)
+                except Exception as exc:
+                    failures.append((rel_path, exc))
+                    logging.exception("Failure in %s", rel_path, exc_info=exc)
+                finally:
+                    processed += 1
+                    progress.advance(mod_task)
+
+            file_systems.append(fs)
+            progress.advance(proj_task)
+
+    _summarize_failures(failures, processed)
+    return file_systems
+
+
+def _run_pipeline_sync(
+    *,
+    paths: Union[str | Path, Sequence[str | Path]],
+    doc_style: docstyle.DocStyle,
+    fs_factory: Callable[[Path], ProjectFileSystem],
+    use_case: DocumentationUpdateUseCase,
+) -> list[ProjectFileSystem]:
     # Normalise input --------------------------------------------------------
     if isinstance(paths, (str, Path)):
         paths = [paths]  # type: ignore[list-item]
 
     failures: list[tuple[Path, Exception]] = []
     processed = 0
-
     file_systems: list[ProjectFileSystem] = []
 
     # Live progress ----------------------------------------------------------
@@ -232,3 +271,63 @@ def run_pipeline(
     # Final summary ----------------------------------------------------------
     _summarize_failures(failures, processed)
     return file_systems
+
+
+# --------------------------------------------------------------------------- #
+#  Public adapter                                                             #
+# --------------------------------------------------------------------------- #
+def run_pipeline(
+    paths: Union[str | Path, Sequence[str | Path]],
+    *,
+    concurrency: int = 0,
+    fs_factory: Callable[[Path], ProjectFileSystem] = utils.fs_factory,
+    use_case_factory: Callable[[bool], DocumentationUpdateUseCase] = _make_use_case,
+) -> list[ProjectFileSystem]:
+    """
+    Update documentation for all Python files under the given paths.
+
+    Normalizes input paths, loads files using the provided file system factory, runs
+    the documentation update use case, stages updated files, and displays progress and
+    a summary.
+
+    Parameters
+    ----------
+    paths : str, Path, or Sequence of (str or Path)
+        One or more files or directories to process. Mixed input is allowed.
+    concurrency : int, optional
+        If > 0, run the pipeline with *concurrency* simultaneous OpenAI calls
+        using the asynchronous code path. Defaults to 0 (synchronous).
+    fs_factory : Callable[[Path], ProjectFileSystem], optional
+        Factory function that returns a ProjectFileSystem for a given project root.
+    use_case_factory : Callable[[bool], DocumentationUpdateUseCase], optional
+        Factory function that returns a DocumentationUpdateUseCase instance.
+
+    Returns
+    -------
+    list[ProjectFileSystem]
+        List of file system adapters used for the processed projects.
+    """
+    # -- TODO: REFACTOR ------
+    cfg = config.Settings()
+    doc_style = docstyle.DocStyle.from_string(cfg.doc_style)
+
+    if concurrency > 0:
+        # Use the async code path
+        use_case = use_case_factory(async_mode=True)
+        return asyncio.run(
+            _run_pipeline_async(
+                paths=paths,
+                concurrency=concurrency,
+                doc_style=doc_style,
+                fs_factory=fs_factory,
+                use_case=use_case,
+            )
+        )
+    else:
+        use_case = use_case_factory(async_mode=False)
+        return _run_pipeline_sync(
+            paths=paths,
+            doc_style=doc_style,
+            fs_factory=fs_factory,
+            use_case=use_case,
+        )

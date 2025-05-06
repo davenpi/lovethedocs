@@ -41,3 +41,28 @@ class ModuleEditGenerator:
         raw = self._client.request(prompt)
         self._validator.validate(raw)
         return self._mapper(raw)
+
+        # ------------------------------------------------------------------ #
+
+    #  Async companion                                                   #
+    # ------------------------------------------------------------------ #
+    async def generate_async(self, prompt: str) -> ModuleEdit:
+        """
+        Asynchronous equivalent of `generate`.
+
+        Calls an *async-capable* LLM client adapter in a non-blocking way.
+        The validator and mapper logic are identical.
+
+        Parameters
+        ----------
+        prompt:
+            Fully-formed user prompt.
+
+        Returns
+        -------
+        ModuleEdit
+            Parsed and validated edit instructions.
+        """
+        raw = await self._client.request(prompt)  # type: ignore[attr-defined]
+        self._validator.validate(raw)
+        return self._mapper(raw)

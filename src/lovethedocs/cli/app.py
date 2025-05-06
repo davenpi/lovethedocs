@@ -42,6 +42,7 @@ example = (
     "--------\n\n"
     "lovethedocs update gateways/ application/      # stage edits only\n\n"
     "lovethedocs update -r gateways/                # stage and review\n\n"
+    "lovethedocs update -a 6 src/                   # run with 6 concurrent requests"
 )
 
 
@@ -66,8 +67,20 @@ def update(
         "--viewer",
         help="Diff viewer to use (auto, vscode, git, terminal).",
     ),
+    concurrency: int = typer.Option(
+        0,
+        "-a",
+        "--async",
+        metavar="N",
+        min=0,
+        help=(
+            "Number of concurrent requests to the LLM. "
+            "0 (default) keeps the synchronous behavior; "
+            "Use 4-8 for a bigger speedup."
+        ),
+    ),
 ) -> None:
-    file_systems = run_pipeline.run_pipeline(paths)
+    file_systems = run_pipeline.run_pipeline(paths, concurrency=concurrency)
     selected_viewer = resolve_viewer(viewer)
     if review:
         console = Console()

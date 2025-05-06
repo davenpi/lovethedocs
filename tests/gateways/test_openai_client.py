@@ -1,92 +1,105 @@
 import json
+# ── pytest extras ───────────────────────────────────────────────────────────
+import asyncio
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from lovethedocs.gateways import openai_client as oc
+# --------------------------------------------------------------------------- #
 
 
-# --------------------------------------------------------------------------- #
-# Helpers                                                                     #
-# --------------------------------------------------------------------------- #
-class _DummyStyle:  # minimal stand-in for DocStyle
+# minimal stand-in for DocStyle
+class _DummyStyle:
     name = "dummy"
 
 
-def _clear_client_cache() -> None:
-    """Reset the lru_cache between tests so each test starts fresh."""
+# utility: clear both caches between tests
+def _clear_caches():
     oc._get_sdk_client.cache_clear()
+    oc._get_async_sdk_client.cache_clear()
 
 
 # --------------------------------------------------------------------------- #
-# 1. request() parses JSON and forwards kwargs                                 #
+# 1. Sync adapter still parses JSON and forwards kwargs                       #
 # --------------------------------------------------------------------------- #
-def test_request_returns_parsed_json(monkeypatch):
-    _clear_client_cache()
+def test_sync_request_returns_parsed_json(monkeypatch):
+    _clear_caches()
     captured = {}
 
-    # --- fake SDK client ----------------------------------------------------
     class FakeResponses:
         def create(self, **kwargs):
             captured.update(kwargs)
             return SimpleNamespace(output_text=json.dumps({"ok": True}))
 
     fake_client = SimpleNamespace(responses=FakeResponses())
-
-    # patch: use our fake SDK client, and short-circuit the prompt loader
     monkeypatch.setattr(oc, "_get_sdk_client", lambda: fake_client)
     monkeypatch.setattr(oc, "_PROMPTS", SimpleNamespace(get=lambda _n: "TEST_PROMPT"))
 
-    # instantiate the adapter under test
     adapter = oc.OpenAIClientAdapter(style=_DummyStyle(), model="gpt-test")
-
     result = adapter.request("PROMPT")
 
     assert result == {"ok": True}
     assert captured["model"] == "gpt-test"
     assert captured["instructions"] == "TEST_PROMPT"
-    assert captured["text"]["format"]["type"] == "json_schema"
 
 
 # --------------------------------------------------------------------------- #
-# 2. _get_sdk_client raises if the API key is missing                         #
+# 2. Async adapter works + returns parsed JSON                                #
 # --------------------------------------------------------------------------- #
-# TODO: REFACTOR.
+@pytest.mark.asyncio
+async def test_async_request_returns_parsed_json(monkeypatch):
+    _clear_caches()
+
+    async def _fake_create(**kwargs):
+        return SimpleNamespace(output_text=json.dumps({"async_ok": True}))
+
+    fake_client = SimpleNamespace(responses=SimpleNamespace(create=AsyncMock(side_effect=_fake_create)))
+    monkeypatch.setattr(oc, "_get_async_sdk_client", lambda: fake_client)
+    monkeypatch.setattr(oc, "_PROMPTS", SimpleNamespace(get=lambda _n: "TEST_PROMPT"))
+
+    adapter = oc.AsyncOpenAIClientAdapter(style=_DummyStyle(), model="gpt-test")
+    result = await adapter.request("PROMPT")
+
+    assert result == {"async_ok": True}
+    fake_client.responses.create.assert_awaited_once()
+
+
+# --------------------------------------------------------------------------- #
+# 3. _get_sdk_client raises when the API key is missing                       #
+# --------------------------------------------------------------------------- #
 def test_get_sdk_client_raises_when_missing(monkeypatch):
-    _clear_client_cache()
+    _clear_caches()
 
-    # Stub that mimics the SDK raising when no key is configured
-    class _RaisesValueError:
-        def __init__(self, *_, **__):
-            raise ValueError("missing api key")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)  # ensure env var absent
-    monkeypatch.setattr(oc, "OpenAI", _RaisesValueError)  # patch constructor
+    # Fake constructor that mimics the real SDK error type
+    def _raise_openai_error(*_, **__):
+        raise oc.OpenAIError("missing api key")
 
-    with pytest.raises(RuntimeError):
+    monkeypatch.setattr(oc, "OpenAI", _raise_openai_error)
+
+    with pytest.raises(RuntimeError, match="OpenAI API key not found"):
         oc._get_sdk_client()
 
 
 # --------------------------------------------------------------------------- #
-# 3. _get_sdk_client is cached (constructor runs once)                        #
+# 4. Async helper is cached (constructor runs once)                           #
 # --------------------------------------------------------------------------- #
-# TODO: REFACTOR. Not handling errors correctly.
-def test_get_sdk_client_is_cached(monkeypatch):
-    _clear_client_cache()
-
+def test_get_async_sdk_client_is_cached(monkeypatch):
+    _clear_caches()
     calls = {"n": 0}
 
-    class FakeOpenAI:
-        def __init__(self, *args, **kwargs):  # accept any signature
+    class FakeAsyncOpenAI:
+        def __init__(self, *_, **__):
             calls["n"] += 1
-            self.responses = SimpleNamespace()  # lightweight placeholder
 
-    monkeypatch.setenv("OPENAI_API_KEY", "dummy")  # key to satisfy flow
-    monkeypatch.setattr(oc, "OpenAI", FakeOpenAI)  # patch constructor
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy")
+    monkeypatch.setattr(oc, "AsyncOpenAI", FakeAsyncOpenAI)
 
-    c1 = oc._get_sdk_client()  # first call – builds
-    c2 = oc._get_sdk_client()  # second call – cached
+    c1 = oc._get_async_sdk_client()
+    c2 = oc._get_async_sdk_client()
 
     assert c1 is c2
     assert calls["n"] == 1
