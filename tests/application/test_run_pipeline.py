@@ -15,6 +15,12 @@ class StubUseCase:
         for mod in modules:
             yield mod, mod.code
 
+def stub_use_case_factory(async_mode: bool = False):
+    """Factory that ignores async_mode and returns a fresh StubUseCase."""
+    return StubUseCase()
+
+
+
 
 class StubFileSystem:
     """
@@ -64,7 +70,7 @@ def test_run_pipeline_happy_path(tmp_path):
     run_pipeline(
         paths=[tmp_path],
         fs_factory=StubFileSystem,
-        use_case=StubUseCase(),
+        use_case_factory=stub_use_case_factory,
     )
 
     fs = StubFileSystem.instances[0]
@@ -80,7 +86,7 @@ def test_run_pipeline_single_python_file(tmp_path):
     run_pipeline(
         paths=file_path,
         fs_factory=StubFileSystem,
-        use_case=StubUseCase(),
+        use_case_factory=stub_use_case_factory,
     )
 
     fs = StubFileSystem.instances[0]
@@ -102,7 +108,7 @@ def test_run_pipeline_mixed_inputs(tmp_path):
     run_pipeline(
         paths=[pkg_dir, bar_file],
         fs_factory=StubFileSystem,
-        use_case=StubUseCase(),
+        use_case_factory=stub_use_case_factory,
     )
 
     # one StubFileSystem per project root
@@ -115,3 +121,29 @@ def test_run_pipeline_mixed_inputs(tmp_path):
 
     assert any(p.name == "foo.py" for p in all_staged)  # from dir walk
     assert any(p.name == "bar.py" for p in all_staged)  # from single file
+
+
+class AsyncStubUseCase:
+    """Mimics the real async use-case but responds immediately."""
+
+    async def run_async(self, modules, *, style, concurrency):
+        for mod in modules:
+            yield mod, f"# patched by async ({mod.path})"
+
+
+def stub_factory(async_mode: bool = False):
+    # run_pipeline asks for async_mode; ignore for sync, return stub for async
+    return AsyncStubUseCase() if async_mode else None
+
+
+def test_run_pipeline_async_happy(tmp_path: Path):
+    (tmp_path / "foo.py").write_text("print('hi')")
+    res = run_pipeline(
+        paths=tmp_path/"foo.py",
+        concurrency=2,               # kicks us onto the async path
+        fs_factory=lambda p: p,      # identity—good enough for unit test
+        use_case_factory=stub_factory,
+    )
+    # one ProjectFileSystem (here: tmp_path) returned
+    print("res", res)
+    assert len(res) == 1
