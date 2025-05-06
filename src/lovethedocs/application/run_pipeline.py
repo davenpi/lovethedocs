@@ -31,7 +31,7 @@ from rich.progress import (
 )
 from rich.table import Table
 
-from lovethedocs.application import logging_setup  # noqa: F401
+# from lovethedocs.application import logging_setup  # noqa: F401
 from lovethedocs.application import config, mappers, utils
 from lovethedocs.domain import docstyle
 from lovethedocs.domain.models import SourceModule
