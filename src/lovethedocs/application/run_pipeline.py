@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import sys
 from functools import lru_cache
 from pathlib import Path
 from typing import Callable, Sequence, Union
@@ -103,8 +104,9 @@ def _summarize_failures(failures: list[tuple[Path, Exception]], processed: int) 
     table.add_column("Error", overflow="fold")
 
     for path, exc in failures:
+        print(f"✗ {path}: {exc}", file=sys.stderr)
         table.add_row(str(path), str(exc))
-        logging.exception("Failure in %s", path, exc_info=exc)
+        # logging.exception("Failure in %s", path, exc_info=exc)
 
     console.print(
         Panel(

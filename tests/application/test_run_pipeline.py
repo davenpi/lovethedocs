@@ -15,11 +15,10 @@ class StubUseCase:
         for mod in modules:
             yield mod, mod.code
 
+
 def stub_use_case_factory(async_mode: bool = False):
     """Factory that ignores async_mode and returns a fresh StubUseCase."""
     return StubUseCase()
-
-
 
 
 class StubFileSystem:
@@ -139,9 +138,9 @@ def stub_factory(async_mode: bool = False):
 def test_run_pipeline_async_happy(tmp_path: Path):
     (tmp_path / "foo.py").write_text("print('hi')")
     res = run_pipeline(
-        paths=tmp_path/"foo.py",
-        concurrency=2,               # kicks us onto the async path
-        fs_factory=lambda p: p,      # identity—good enough for unit test
+        paths=tmp_path / "foo.py",
+        concurrency=2,  # kicks us onto the async path
+        fs_factory=lambda p: p,  # identity—good enough for unit test
         use_case_factory=stub_factory,
     )
     # one ProjectFileSystem (here: tmp_path) returned

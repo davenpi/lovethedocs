@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from typer.testing import CliRunner
 
 from lovethedocs.cli.app import app
@@ -36,7 +37,9 @@ def test_cli_update_concurrency_flag(tmp_path: Path, monkeypatch):
         called["concurrency"] = concurrency
         return []
 
-    monkeypatch.setattr("lovethedocs.application.run_pipeline.run_pipeline", fake_run_pipeline)
+    monkeypatch.setattr(
+        "lovethedocs.application.run_pipeline.run_pipeline", fake_run_pipeline
+    )
 
     result = runner.invoke(
         app,
