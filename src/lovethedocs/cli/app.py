@@ -46,7 +46,7 @@ example = (
 )
 
 
-@app.command(help="Generate improved docstrings and stage diffs.\n\n" + example)
+@app.command(help="Generate new docstrings and stage diffs.\n\n" + example)
 def update(
     paths: List[Path] = typer.Argument(
         ...,
@@ -69,8 +69,8 @@ def update(
     ),
     concurrency: int = typer.Option(
         0,
-        "-a",
-        "--async",
+        "-c",
+        "--concurrency",
         metavar="N",
         min=0,
         help=(
@@ -80,6 +80,14 @@ def update(
         ),
     ),
 ) -> None:
+    """
+    Generate new docstrings and stage diffs.
+
+    The `concurrency` option allows you to specify the number of concurrent
+    requests to the LLM. This can significantly speed up processing for
+    larger projects. A value of 0 (default) will process requests
+    synchronously.
+    """
     file_systems = run_pipeline.run_pipeline(paths, concurrency=concurrency)
     selected_viewer = resolve_viewer(viewer)
     if review:
