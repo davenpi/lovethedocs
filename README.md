@@ -49,7 +49,7 @@ echo "OPENAI_API_KEY=sk-..." > .env
 
 ## 🔧 Usage
 
-LoveTheDocs offers a simple command-line interface with two main commands:
+Generate, review, and clean up staged files. TODO
 
 ### Generate Documentation
 ```bash
