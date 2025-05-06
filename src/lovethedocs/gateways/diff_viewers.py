@@ -6,13 +6,31 @@ from lovethedocs.ports import DiffViewerPort
 
 
 class DiffViewerError(RuntimeError):
-    """Custom exception for diff viewer errors."""
+    """Exception raised for errors related to diff viewers."""
 
     pass
 
 
 class CodeCLIDiffViewer(DiffViewerPort):
+    """Diff viewer that launches the VS Code CLI to show file differences."""
+
     def view(self, original: Path, staged: Path) -> None:
+        """
+        Open a diff view between two files using the VS Code CLI.
+
+        Parameters
+        ----------
+        original : Path
+            The path to the original file.
+        staged : Path
+            The path to the staged or modified file.
+
+        Raises
+        ------
+        DiffViewerError
+            If the VS Code CLI ('code') is not found on the system PATH or the command
+            fails.
+        """
         try:
             subprocess.run(
                 ["code", "-d", str(original), str(staged)],
@@ -24,9 +42,19 @@ class CodeCLIDiffViewer(DiffViewerPort):
 
 
 class TerminalDiffViewer(DiffViewerPort):
-    """Colourised unified diff using Rich."""
+    """Diff viewer that displays a colorized unified diff in the terminal using Rich."""
 
     def view(self, original: Path, improved: Path) -> None:
+        """
+        Display a colorized unified diff between two files in the terminal.
+
+        Parameters
+        ----------
+        original : Path
+            The path to the original file.
+        improved : Path
+            The path to the improved or modified file.
+        """
         from difflib import unified_diff
 
         from rich.console import Console
@@ -39,9 +67,19 @@ class TerminalDiffViewer(DiffViewerPort):
 
 
 class GitDiffViewer(DiffViewerPort):
-    """Fallback diff viewer that pipes `git diff --no-index` to the user's pager."""
+    """Diff viewer that pipes 'git diff --no-index' output to the user's pager."""
 
     def view(self, original: Path, staged: Path) -> None:
+        """
+        Show a diff between two files using 'git diff --no-index'.
+
+        Parameters
+        ----------
+        original : Path
+            The path to the original file.
+        staged : Path
+            The path to the staged or modified file.
+        """
         subprocess.run(
             ["git", "--no-pager", "diff", "--no-index", str(original), str(staged)],
             check=False,
@@ -58,10 +96,27 @@ _VIEWER_REGISTRY = {
 
 def resolve_viewer(name: str = "auto") -> DiffViewerPort:
     """
-    Return an instantiated DiffViewerPort based on *name*.
+    Return an instantiated DiffViewerPort based on the given viewer name.
 
-    * auto → try VS Code, then Git, then fall back to terminal
-    * explicit string → instantiate that viewer or raise DiffViewerError
+    If 'auto', prefer VS Code if available, then Git, then fall back to a terminal diff.
+    If a specific name is given, instantiate the corresponding viewer or raise
+    DiffViewerError.
+
+    Parameters
+    ----------
+    name : str, default 'auto'
+        The name of the diff viewer to use ('auto', 'code', 'vscode', 'git', or
+        'terminal').
+
+    Returns
+    -------
+    DiffViewerPort
+        An instance of the selected diff viewer.
+
+    Raises
+    ------
+    DiffViewerError
+        If the specified viewer name is unknown.
     """
     name = name.lower()
     if name != "auto":

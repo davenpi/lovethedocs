@@ -163,7 +163,31 @@ async def _run_pipeline_async(
     fs_factory: Callable[[Path], ProjectFileSystem],
     use_case: DocumentationUpdateUseCase,
 ) -> list[ProjectFileSystem]:
-    """Mirror of run_pipeline that uses the async use-case."""
+    """
+    Run the documentation update pipeline asynchronously for the given paths.
+
+    Normalizes input paths, loads files using the provided file system factory, runs
+    the asynchronous documentation update use case, stages updated files, and displays
+    progress and a summary.
+
+    Parameters
+    ----------
+    paths : str, Path, or Sequence of (str or Path)
+        One or more files or directories to process.
+    concurrency : int
+        Number of concurrent OpenAI calls to use.
+    doc_style : docstyle.DocStyle
+        Documentation style to apply.
+    fs_factory : Callable[[Path], ProjectFileSystem]
+        Factory function that returns a ProjectFileSystem for a given project root.
+    use_case : DocumentationUpdateUseCase
+        The use case instance to run.
+
+    Returns
+    -------
+    list[ProjectFileSystem]
+        List of file system adapters used for the processed projects.
+    """
     # — normalize input -----------------------------------------------------
     if isinstance(paths, (str, Path)):
         _paths = [paths]  # type: ignore[list-item]
@@ -222,6 +246,28 @@ def _run_pipeline_sync(
     fs_factory: Callable[[Path], ProjectFileSystem],
     use_case: DocumentationUpdateUseCase,
 ) -> list[ProjectFileSystem]:
+    """
+    Run the documentation update pipeline synchronously for the given paths.
+
+    Normalizes input paths, loads files using the provided file system factory, runs the
+    documentation update use case, stages updated files, and displays progress and a summary.
+
+    Parameters
+    ----------
+    paths : str, Path, or Sequence of (str or Path)
+        One or more files or directories to process.
+    doc_style : docstyle.DocStyle
+        Documentation style to apply.
+    fs_factory : Callable[[Path], ProjectFileSystem]
+        Factory function that returns a ProjectFileSystem for a given project root.
+    use_case : DocumentationUpdateUseCase
+        The use case instance to run.
+
+    Returns
+    -------
+    list[ProjectFileSystem]
+        List of file system adapters used for the processed projects.
+    """
     # Normalise input --------------------------------------------------------
     if isinstance(paths, (str, Path)):
         paths = [paths]  # type: ignore[list-item]

@@ -81,12 +81,21 @@ def update(
     ),
 ) -> None:
     """
-    Generate new docstrings and stage diffs.
+    Generate new docstrings for the given paths and stage diffs.
 
-    The `concurrency` option allows you to specify the number of concurrent
-    requests to the LLM. This can significantly speed up processing for
-    larger projects. A value of 0 (default) will process requests
-    synchronously.
+    Optionally opens the diffs for review after generation. Supports concurrent
+    requests to the LLM for faster processing of large projects.
+
+    Parameters
+    ----------
+    paths : List[Path]
+        Project roots or package paths to process.
+    review : bool, optional
+        If True, open diffs immediately after generation. Default is False.
+    viewer : str, optional
+        Diff viewer to use ('auto', 'vscode', 'git', 'terminal'). Default is 'auto'.
+    concurrency : int, optional
+        Number of concurrent requests to the LLM. 0 (default) processes synchronously.
     """
     file_systems = run_pipeline.run_pipeline(paths, concurrency=concurrency)
     selected_viewer = resolve_viewer(viewer)
@@ -123,7 +132,16 @@ def review(
     ),
 ) -> None:
     """
-    Open staged edits in your chosen diff viewer (auto-detect by default).
+    Open staged documentation edits in the specified diff viewer.
+
+    Parameters
+    ----------
+    paths : List[Path]
+        Project roots that contain a .lovethedocs folder.
+    interactive : bool, optional
+        If True, prompt before moving to the next diff. Default is True.
+    viewer : str, optional
+        Diff viewer to use ('auto', 'vscode', 'git', 'terminal'). Default is 'auto'.
     """
     selected_viewer = resolve_viewer(viewer)
     for root in paths:
@@ -156,13 +174,17 @@ def clean(
     ),
 ) -> None:
     """
-    Examples
-    --------
-    # Remove staged edits only
-    lovethedocs clean .
+    Remove lovethedocs artifacts from the specified project roots.
 
-    # Skip confirmation prompt
-    lovethedocs clean . -y
+    Deletes the .lovethedocs directory in each given path. Prompts for confirmation
+    unless 'yes' is specified.
+
+    Parameters
+    ----------
+    paths : List[Path]
+        Project roots to purge (deletes path/.lovethedocs/*).
+    yes : bool, optional
+        If True, skip the confirmation prompt. Default is False.
     """
     for root in paths:
         trash = [root / ".lovethedocs"]

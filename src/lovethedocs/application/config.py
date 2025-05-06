@@ -10,9 +10,8 @@ class Settings:
     """
     Immutable configuration settings for the application.
 
-    This dataclass stores tweakable parameters such as the model name and documentation
-    style used throughout the application. Instances are immutable due to the
-    `frozen=True` parameter.
+    Stores tweakable parameters such as the model name and documentation style.
+    Instances are immutable due to `frozen=True`.
     """
 
     model: str = "gpt-4.1"
