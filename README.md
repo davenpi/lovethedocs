@@ -1,8 +1,8 @@
-# LoveTheDocs
+# lovethedocs
 
 Make every docstring sparkle.
 
-## Why lovethedocs?
+## Why?
 
 - **One‑command upgrades** – run `lovethedocs update path/`, review, merge.
 - **Consistent NumPy‑style** docstrings everywhere – Google and reST next.
