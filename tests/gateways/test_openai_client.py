@@ -1,12 +1,11 @@
 import json
-# ── pytest extras ───────────────────────────────────────────────────────────
-import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
 from lovethedocs.gateways import openai_client as oc
+
 # --------------------------------------------------------------------------- #
 
 
@@ -55,7 +54,9 @@ async def test_async_request_returns_parsed_json(monkeypatch):
     async def _fake_create(**kwargs):
         return SimpleNamespace(output_text=json.dumps({"async_ok": True}))
 
-    fake_client = SimpleNamespace(responses=SimpleNamespace(create=AsyncMock(side_effect=_fake_create)))
+    fake_client = SimpleNamespace(
+        responses=SimpleNamespace(create=AsyncMock(side_effect=_fake_create))
+    )
     monkeypatch.setattr(oc, "_get_async_sdk_client", lambda: fake_client)
     monkeypatch.setattr(oc, "_PROMPTS", SimpleNamespace(get=lambda _n: "TEST_PROMPT"))
 

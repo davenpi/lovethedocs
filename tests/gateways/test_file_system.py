@@ -63,7 +63,7 @@ def test_stage_file_relative_explicit_root():
         fs.stage_file(rel_path, code)
 
         dest = fs.staged_path(rel_path)
-        improved_root = project_root / ".lovethedocs" / "improved"
+        improved_root = project_root / ".lovethedocs" / "staged"
         assert dest == (improved_root.resolve()) / rel_path
         assert dest.is_file()
         assert dest.read_text(encoding="utf-8") == code
