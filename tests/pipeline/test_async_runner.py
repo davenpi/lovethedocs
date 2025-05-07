@@ -1,35 +1,49 @@
-# from pathlib import Path
-# from lovethedocs.application.pipeline import async_runner
+# tests/pipeline/test_async_runner.py
+from pathlib import Path
 
-# from tests.conftest import DummyUseCase, DummyFS
+import pytest
+from tests.helpers import DummyFS, DummyUseCase
+from lovethedocs.application.pipeline import async_runner
 
-# def test_run_async_single_file(tmp_path, patch_progress, patch_summary):
-#     dummy_mod = tmp_path/"demo.py"
-#     dummy_mod.write_text("print('x')")
-#     uc = DummyUseCase()
-#     fs_factory = lambda root: DummyFS(root)
 
-#     [fs] = async_runner.run_async(
-#         paths=dummy_mod, concurrency=2,
-#         fs_factory=fs_factory, use_case=uc
-#     )
+@pytest.fixture
+def fs_factory():
+    # Return a fresh DummyFS for every project root
+    return lambda root: DummyFS(root)
 
-#     rel = Path("demo.py")
-#     assert rel in fs.staged          # file was staged
-#     # assert fs.staged[rel].endswith("# updated")
-#     assert uc.calls                  # use_case was invoked
 
-# def test_run_async_directory(tmp_path, patch_progress, patch_summary):
-#     dir_ = tmp_path/"pkg"
-#     dir_.mkdir()
-#     (dir_/ "a.py").write_text("pass")
-#     uc = DummyUseCase()
-#     fs_factory = lambda root: DummyFS(root)
+def test_run_async_single_file(tmp_path, patch_progress, patch_summary, fs_factory):
+    file_path = tmp_path / "demo.py"
+    file_path.write_text("print('x')")
 
-#     async_runner.run_async(
-#         paths=[dir_], concurrency=1,
-#         fs_factory=fs_factory, use_case=uc
-#     )
+    uc = DummyUseCase()
+    [fs] = async_runner.run_async(
+        paths=file_path,
+        concurrency=2,
+        fs_factory=fs_factory,
+        use_case=uc,
+    )
 
-#     # DummyFS.load_modules makes exactly one call per project
-#     assert len(uc.calls) == 1
+    assert Path("demo.py") in fs.staged
+    assert fs.staged[Path("demo.py")].endswith("# updated")
+
+
+def test_run_async_directory(tmp_path, patch_progress, patch_summary, fs_factory):
+    pkg = tmp_path / "pkg"
+    pkg.mkdir()
+    (pkg / "a.py").write_text("pass")
+
+    uc = DummyUseCase()
+    [fs] = async_runner.run_async(
+        paths=[pkg],
+        concurrency=1,
+        fs_factory=fs_factory,
+        use_case=uc,
+    )
+
+    # DummyFS.load_modules always returns exactly one file,
+    # so we expect one staged file after the run.
+    assert len(fs.staged) == 1
+    staged_path = next(iter(fs.staged))
+    assert staged_path.suffix == ".py"
+    assert fs.staged[staged_path].endswith("# updated")

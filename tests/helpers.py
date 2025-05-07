@@ -32,6 +32,7 @@ class DummyUseCase:
 
     # ----- async path -------------------------------------------------------
     async def run_async(self, modules, *, style, concurrency):
+        self.calls.extend(modules)
         for m in modules:
             if self.should_fail:
                 raise RuntimeError("async-boom")
