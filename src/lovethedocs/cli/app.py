@@ -21,7 +21,8 @@ from typing import List
 import typer
 from rich.console import Console
 
-from lovethedocs.application import diff_review, run_pipeline
+from lovethedocs.application import diff_review
+from lovethedocs.application.pipeline import run_pipeline
 from lovethedocs.gateways.diff_viewers import resolve_viewer
 from lovethedocs.gateways.project_file_system import ProjectFileSystem
 
@@ -97,7 +98,7 @@ def update(
     concurrency : int, optional
         Number of concurrent requests to the LLM. 0 (default) processes synchronously.
     """
-    file_systems = run_pipeline.run_pipeline(paths, concurrency=concurrency)
+    file_systems = run_pipeline(paths, concurrency=concurrency)
     selected_viewer = resolve_viewer(viewer)
     if review:
         console = Console()
