@@ -2,8 +2,7 @@
 ModulePatcher - apply a `ModuleEdit` to old source code.
 
 For this first cut we splice in (or replace) docstrings only; signature edits
-can be added later by extending the visitor.  Everything stays inside the
-domain - no imports from the application layer.
+can be added later by extending the visitor.
 """
 
 from __future__ import annotations
@@ -70,12 +69,26 @@ def _parse_header(header: str) -> cst.FunctionDef:
     return cst.parse_module(hdr).body[0]  # FunctionDef
 
 
+def _first_stmt_is_docstring(body: list[cst.BaseStatement]) -> bool:
+    """Return True if the first statement in the list is a docstring."""
+    if not body:
+        return False
+    first_stmt = body[0]
+    return (
+        isinstance(first_stmt, cst.SimpleStatementLine)
+        and isinstance(first_stmt.body[0], cst.Expr)
+        and isinstance(
+            first_stmt.body[0].value, (cst.SimpleString, cst.ConcatenatedString)
+        )
+    )
+
+
 class _DocSigPatcher(cst.CSTTransformer):
     """
     A CSTTransformer that applies docstring and signature edits.
 
-    This transformer uses FunctionEdit and ClassEdit objects to update or insert
-    docstrings and replace function signatures in a module's CST.
+    This transformer uses FunctionEdit and ClassEdit objects to update or insert docstrings
+    and replace function signatures in a module's CST.
     """
 
     def __init__(self, edits_by_qualname: dict[str, FunctionEdit | ClassEdit]):
@@ -92,52 +105,45 @@ class _DocSigPatcher(cst.CSTTransformer):
 
     # ----------------- internal helpers -----------------
     def _fqname(self) -> str:
-        """
-        Return the current qualified name based on the traversal scope.
-
-        Returns
-        -------
-        str
-            The dot-separated qualified name for the current scope.
-        """
+        """Return the current qualified name based on the traversal scope."""
         return ".".join(self._scope)
 
-    def _patch_doc(
-        self, block: cst.IndentedBlock, text: str, indent_str: str
-    ) -> cst.IndentedBlock:
+    def _patch_doc(self, block: cst.BaseSuite, text: str, indent: str) -> cst.BaseSuite:
         """
-        Replace or insert a docstring in the given indented block.
+        Insert or replace a docstring in the given code block.
+
+        If the block is a stub, convert it to an indented block and insert the
+        docstring. If a docstring already exists, replace it; otherwise, insert a new
+        docstring at the top.
 
         Parameters
         ----------
-        block : cst.IndentedBlock
+        block : cst.BaseSuite
             The code block in which to patch the docstring.
         text : str
             The docstring text to insert.
-        indent_str : str
+        indent : str
             The indentation string to use for formatting.
 
         Returns
         -------
-        cst.IndentedBlock
+        cst.BaseSuite
             The updated code block with the new or replaced docstring.
         """
-        doc_stmt = _make_docstring_stmt(text, indent_str)
-        body = list(block.body)
+        doc_stmt = _make_docstring_stmt(text, indent)
 
-        if (
-            body
-            and isinstance(body[0], cst.SimpleStatementLine)
-            and isinstance(body[0].body[0], cst.Expr)
-            and isinstance(
-                body[0].body[0].value, (cst.SimpleString, cst.ConcatenatedString)
-            )
-        ):
-            body[0] = doc_stmt  # replace existing docstring
+        # Convert stubs (`SimpleStatementSuite`) to a real block if needed.
+        if isinstance(block, cst.SimpleStatementSuite):
+            # Discard the original inline ellipsis and build a proper body.
+            ellipsis_stmt = cst.SimpleStatementLine(body=[cst.Expr(cst.Ellipsis())])
+            return cst.IndentedBlock(body=[doc_stmt, ellipsis_stmt])
         else:
-            body.insert(0, doc_stmt)  # insert new docstring
-
-        return block.with_changes(body=body)
+            body = list(block.body)
+            if _first_stmt_is_docstring(body):
+                body[0] = doc_stmt
+            else:
+                body.insert(0, doc_stmt)
+            return block.with_changes(body=body)
 
     # ----------------- class traversal -----------------
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
@@ -238,6 +244,21 @@ class ModulePatcher:
     """
 
     def apply(self, edit: ModuleEdit, old_code: str) -> str:
+        """
+        Apply the given ModuleEdit to the old source code and return the patched code.
+
+        Parameters
+        ----------
+        edit : ModuleEdit
+            The module edit instructions to apply.
+        old_code : str
+            The original source code to patch.
+
+        Returns
+        -------
+        str
+            The patched source code.
+        """
         # Build lookup {qualname: FunctionEdit|ClassEdit}
         edits_by_qname = edit.map_qnames_to_edits()
 

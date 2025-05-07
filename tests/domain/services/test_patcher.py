@@ -7,13 +7,12 @@ Goals
 2. Check that multi-line docstrings are indented correctly.
 3. Ensure function-signature replacement works.
 4. Confirm that untouched objects remain unchanged (safety net).
+5. Test that docstrings are inserted into Protocol stubs at various levels.
 """
 
 from __future__ import annotations
 
 import textwrap
-
-import pytest  # noqa: F401
 
 from lovethedocs.domain.models import ClassEdit, FunctionEdit, ModuleEdit
 from lovethedocs.domain.services.patcher import ModulePatcher
@@ -127,3 +126,70 @@ def test_no_edits_no_changes():
         ModuleEdit(function_edits=[FunctionEdit(qualname="touch", docstring="x")]),
     )
     assert out2.strip() == textwrap.dedent(src).strip()
+
+
+def test_protocol_stub_docstring_insertion():
+    """
+    Reproduces the crash on Protocol stubs where LibCST raises
+    AttributeError('SimpleStatementLine' object has no attribute 'semicolon').
+
+    Expectation: `_patch_doc` should inject a docstring into a stub method
+    and return compilable code.
+    """
+    src = """
+        from typing import Protocol
+
+        class FileSystemPort(Protocol):
+            def load_modules(self) -> dict[str, str]: ...
+    """
+    expected = '''
+        from typing import Protocol
+
+        class FileSystemPort(Protocol):
+            def load_modules(self) -> dict[str, str]:
+                """Load modules from storage."""
+                ...
+    '''
+    edit = ModuleEdit(
+        class_edits=[
+            ClassEdit(
+                qualname="FileSystemPort",
+                method_edits=[
+                    FunctionEdit(
+                        qualname="FileSystemPort.load_modules",
+                        docstring="Load modules from storage.",
+                    )
+                ],
+            )
+        ]
+    )
+    out = apply(src, edit)
+    assert out.strip() == textwrap.dedent(expected).strip()
+
+
+def test_stub_function_docstring_insertion():
+    """
+    Ensure top-level stub functions (one-liner ellipsis) receive a docstring
+    and proper indentation.
+
+    Before:
+        def ping() -> str: ...
+
+    After:
+        def ping() -> str:
+            \"\"\"Ping the service\"\"\"
+            ...
+    """
+    src = """
+        def ping() -> str: ...
+    """
+    expected = '''
+        def ping() -> str:
+            """Ping the service"""
+            ...
+    '''
+    edit = ModuleEdit(
+        function_edits=[FunctionEdit(qualname="ping", docstring="Ping the service")]
+    )
+    out = apply(src, edit)
+    assert out.strip() == textwrap.dedent(expected).strip()
