@@ -108,7 +108,7 @@ lovethedocs update -r -v terminal path/
 
 All new files are staged in a `.lovethedocs/staged/` directory within your
 project. For example, if you run `lovethedocs update path/`, the updated
-versions will be stored in `path/.lovethedocs/staged/.` When you accept
+versions will be stored in `path/.lovethedocs/staged/*` When you accept
 changes during review, original files are backed up to
 `path/.lovethedocs/backups/`.
 
