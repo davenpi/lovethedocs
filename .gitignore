@@ -39,3 +39,6 @@ dist/
 
 # errors
 errors/
+
+# checklist
+release_checklist.md
