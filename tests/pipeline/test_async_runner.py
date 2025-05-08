@@ -1,6 +1,6 @@
 """
 Tests for lovethedocs.application.pipeline.async_runner
-(no external helpers required).
+(updated to use UpdateResult rather than the removed safety shim).
 """
 
 from __future__ import annotations
@@ -12,6 +12,8 @@ from typing import Dict
 import pytest
 
 from lovethedocs.application.pipeline import async_runner as uut
+from lovethedocs.domain.models import SourceModule
+from lovethedocs.domain.models.update_result import UpdateResult
 
 
 # ────────────────────────────────────────────────────────────
@@ -24,14 +26,12 @@ class _DummyFS:
         self.root = root
         self.staged: Dict[Path, str] = {}
 
-    # ----- interface expected by async_runner -----------------------------
+    # interface expected by async_runner
     def load_modules(self) -> Dict[Path, str]:
-        modules = {
+        return {
             p.relative_to(self.root): p.read_text("utf-8")
             for p in self.root.rglob("*.py")
         }
-        # still return *something* so runner metrics don’t explode
-        return modules or {Path("foo.py"): "print('hi')"}
 
     def stage_file(self, rel_path: Path, code: str) -> None:
         self.staged[rel_path] = code
@@ -44,23 +44,21 @@ def _fs_factory(root: Path) -> _DummyFS:  # noqa: D401
 # ────────────────────────────────────────────────────────────
 # 1. single-file happy path
 # ────────────────────────────────────────────────────────────
-def test_run_async_single_file_success(
-    tmp_path, patch_progress, patch_summary, monkeypatch
-):
+def test_run_async_single_file_success(tmp_path, patch_progress, patch_summary):
     file_path = tmp_path / "demo.py"
     file_path.write_text("print('x')")
 
-    async def stub_safe_update(use_case, mod, *, style, sem):
-        # succeed indiscriminately
-        return mod, mod.code + "\n# updated", None
-
-    monkeypatch.setattr(uut, "safe_update_async", stub_safe_update)
+    class FakeUseCase:
+        async def run_async(self, modules, *, style, concurrency):
+            # exactly one module here
+            mod = modules[0]
+            yield UpdateResult(mod, mod.code + "\n# updated")
 
     [fs] = uut.run_async(
         paths=file_path,
         concurrency=2,
         fs_factory=_fs_factory,
-        use_case=object(),  # not used by stub
+        use_case=FakeUseCase(),
     )
 
     assert fs.staged == {Path("demo.py"): "print('x')\n# updated"}
@@ -69,47 +67,48 @@ def test_run_async_single_file_success(
 # ────────────────────────────────────────────────────────────
 # 2. directory with one failure
 # ────────────────────────────────────────────────────────────
-def test_run_async_directory_partial_failure(
-    tmp_path, patch_progress, patch_summary, monkeypatch
-):
-    (tmp_path / "good.py").write_text("pass")
-    (tmp_path / "bad.py").write_text("boom")
+def test_run_async_directory_partial_failure(tmp_path, patch_progress, patch_summary):
+    good = tmp_path / "good.py"
+    good.write_text("pass")
+    bad = tmp_path / "bad.py"
+    bad.write_text("boom")
 
-    async def stub_safe_update(use_case, mod, *, style, sem):
-        if mod.path.name == "bad.py":
-            return mod, None, RuntimeError("kaboom")
-        return mod, mod.code + "\n# ok", None
-
-    monkeypatch.setattr(uut, "safe_update_async", stub_safe_update)
+    class FakeUseCase:
+        async def run_async(self, modules, *, style, concurrency):
+            for mod in modules:
+                if mod.path.name == "bad.py":
+                    yield UpdateResult(mod, error=RuntimeError("kaboom"))
+                else:
+                    yield UpdateResult(mod, mod.code + "\n# ok")
 
     [fs] = uut.run_async(
         paths=[tmp_path],
         concurrency=1,
         fs_factory=_fs_factory,
-        use_case=None,
+        use_case=FakeUseCase(),
     )
 
     assert Path("bad.py") not in fs.staged
-    print("fs.staged", fs.staged)
     assert fs.staged[Path("good.py")].endswith("# ok")
 
 
 # ────────────────────────────────────────────────────────────
 # 3. non-Python path is ignored
 # ────────────────────────────────────────────────────────────
-def test_run_async_ignores_non_python(
-    tmp_path, patch_progress, patch_summary, monkeypatch
-):
+def test_run_async_ignores_non_python(tmp_path, patch_progress, patch_summary):
     junk = tmp_path / "notes.txt"
     junk.write_text("nothing")
 
-    monkeypatch.setattr(uut, "safe_update_async", lambda *a, **k: None)
+    class FakeUseCase:
+        async def run_async(self, modules, *, style, concurrency):
+            if False:
+                yield  # pragma: no cover
 
     result = uut.run_async(
         paths=junk,
         concurrency=1,
         fs_factory=_fs_factory,
-        use_case=None,
+        use_case=FakeUseCase(),
     )
     assert result == []  # runner skips unsupported path
 
@@ -119,32 +118,37 @@ def test_run_async_ignores_non_python(
 # ────────────────────────────────────────────────────────────
 @pytest.mark.parametrize("concurrency", [1, 2])
 def test_semaphore_respected(
-    tmp_path, patch_progress, patch_summary, monkeypatch, concurrency
+    tmp_path, patch_progress, patch_summary, concurrency
 ):
-    # 5 modules to force overlap
+    # create 5 modules to force overlap
     for i in range(5):
         (tmp_path / f"m{i}.py").write_text("x")
 
     active = 0
     max_active = 0
 
-    async def stub_safe_update(use_case, mod, *, style, sem):
-        nonlocal active, max_active
-        async with sem:  # honour the runner’s semaphore
-            active += 1
-            max_active = max(max_active, active)
-            # yield control to let other tasks start
-            await asyncio.sleep(0)
-            active -= 1
-            return mod, mod.code, None
+    class FakeUseCase:
+        async def run_async(self, modules, *, style, concurrency=concurrency):
+            sem = asyncio.Semaphore(concurrency)
 
-    monkeypatch.setattr(uut, "safe_update_async", stub_safe_update)
+            async def _job(mod: SourceModule):
+                nonlocal active, max_active
+                async with sem:
+                    active += 1
+                    max_active = max(max_active, active)
+                    await asyncio.sleep(0)  # let other tasks start
+                    active -= 1
+                    return UpdateResult(mod, mod.code)
+
+            tasks = [_job(m) for m in modules]
+            for coro in asyncio.as_completed(tasks):
+                yield await coro
 
     uut.run_async(
         paths=[tmp_path],
         concurrency=concurrency,
         fs_factory=_fs_factory,
-        use_case=None,
+        use_case=FakeUseCase(),
     )
 
     assert max_active <= concurrency

@@ -13,7 +13,6 @@ from lovethedocs.domain.use_cases.update_docs import DocumentationUpdateUseCase
 from lovethedocs.gateways.project_file_system import ProjectFileSystem
 
 from .progress import make_progress
-from .safety import safe_update_async
 from .summary import summarize
 
 cfg = config.Settings()
@@ -31,8 +30,6 @@ async def _inner(
     failures: list[tuple[Path, Exception]] = []
     processed = 0
     file_systems: list[ProjectFileSystem] = []
-
-    sem = asyncio.Semaphore(concurrency)
 
     with make_progress() as progress:
         proj_task = progress.add_task("Projects", total=len(paths))
@@ -56,23 +53,15 @@ async def _inner(
                 SourceModule(path, code) for path, code in module_map.items()
             ]
             mod_task = progress.add_task(f"[cyan]{root.name}", total=len(src_modules))
+            async for result in use_case.run_async(
+                src_modules, style=style, concurrency=concurrency
+            ):
+                rel_path = Path(result.module.path)
 
-            tasks = [
-                asyncio.create_task(
-                    safe_update_async(use_case, src_mod, style=style, sem=sem)
-                )
-                for src_mod in src_modules
-            ]
-
-            for coro in asyncio.as_completed(tasks):
-                mod, new_code, exc = await coro
-                rel_path = Path(mod.path)
-
-                if exc:
-                    failures.append((rel_path, exc))
+                if result.ok:
+                    fs.stage_file(rel_path, result.new_code)
                 else:
-                    fs.stage_file(rel_path, new_code)
-
+                    failures.append((rel_path, result.error))
                 processed += 1
                 progress.advance(mod_task)
 

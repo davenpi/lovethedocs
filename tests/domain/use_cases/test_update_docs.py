@@ -13,6 +13,7 @@ from typing import Dict, List
 import pytest
 
 from lovethedocs.domain.models import ModuleEdit, SourceModule
+from lovethedocs.domain.models.update_result import UpdateResult
 from lovethedocs.domain.use_cases.update_docs import DocumentationUpdateUseCase
 
 
@@ -80,9 +81,11 @@ def test_update_docs_happy_path():
 
     # ----- patcher called once per module and output collected
     assert len(patcher.calls) == len(mods)
-    for (mod, new_code), original in zip(out, mods, strict=True):
-        assert new_code.endswith("#patched")
-        assert mod is original  # same object, not a copy
+    for res, original in zip(out, mods, strict=True):
+        assert isinstance(res, UpdateResult)
+        assert res.module is original  # same object
+        assert res.new_code.endswith("#patched")
+        assert res.error is None
 
 
 # --------------------------------------------------------------------------- #
@@ -99,5 +102,9 @@ def test_update_docs_propagates_generator_error():
         patcher=FakePatcher(postfix=""),
     )
 
-    with pytest.raises(RuntimeError):
-        list(uc.run([_make_module("solo")], style=STYLE))
+    out = list(uc.run([_make_module("solo")], style=STYLE))
+    assert len(out) == 1
+    res = out[0]
+    assert isinstance(res, UpdateResult)
+    assert isinstance(res.error, RuntimeError)
+    assert res.new_code is None

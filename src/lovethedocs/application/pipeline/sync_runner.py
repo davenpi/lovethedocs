@@ -12,7 +12,6 @@ from lovethedocs.domain.use_cases.update_docs import DocumentationUpdateUseCase
 from lovethedocs.gateways.project_file_system import ProjectFileSystem
 
 from .progress import make_progress
-from .safety import safe_update
 from .summary import summarize
 
 cfg = config.Settings()
@@ -58,15 +57,12 @@ def run_sync(
             ]
             mod_task = progress.add_task(f"[cyan]{root.name}", total=len(src_modules))
 
-            for module in src_modules:
-                mod, new_code, exc = safe_update(use_case, module, style=style)
-                rel_path = mod.path
-
-                if exc:
-                    failures.append((rel_path, exc))
+            for result in use_case.run(src_modules, style=style):
+                rel_path = result.module.path
+                if result.ok:
+                    fs.stage_file(rel_path, result.new_code)
                 else:
-                    fs.stage_file(rel_path, new_code)
-
+                    failures.append((rel_path, result.error))
                 processed += 1
                 progress.advance(mod_task)
 

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from lovethedocs.application.pipeline import sync_runner as uut
-from lovethedocs.domain.models import SourceModule
+from lovethedocs.domain.models.update_result import UpdateResult
 
 
 # ────────────────────────────────────
@@ -13,7 +13,7 @@ class FakeFS:
     def __init__(self, root: Path, modules=None):
         self.root = root
         self._modules = modules or {}
-        self.staged = {}  # {Path -> str}
+        self.staged: dict[Path, str] = {}
 
     def load_modules(self):
         return self._modules  # mapping[Path, str]
@@ -25,37 +25,22 @@ class FakeFS:
 # ────────────────────────────────────
 # 1. single-file happy path
 # ────────────────────────────────────
-def test_run_sync_single_file_success(
-    tmp_path, patch_progress, patch_summary, monkeypatch
-):
-    # Arrange  – create a single .py file
+def test_run_sync_single_file_success(tmp_path, patch_progress, patch_summary):
     file_path = tmp_path / "hello.py"
     file_path.write_text("print('hi')", encoding="utf-8")
 
-    # Fake FS for the *parent* directory
     fake_fs = FakeFS(tmp_path)
 
-    # fs_factory = lambda root: fake_fs
-    def fs_factory(root):
+    def fs_factory(root):  # noqa: D401
         return fake_fs
 
-    def fake_safe_update(use_case, module, *, style):
-        return (
-            SourceModule(module.path, module.code),
-            "print('updated')",
-            None,
-        )
+    class FakeUseCase:
+        def run(self, modules, *, style):
+            mod = modules[0]
+            yield UpdateResult(mod, "print('updated')")
 
-    monkeypatch.setattr(uut, "safe_update", fake_safe_update)
+    fses = uut.run_sync(paths=file_path, fs_factory=fs_factory, use_case=FakeUseCase())
 
-    # Act
-    fses = uut.run_sync(
-        paths=file_path,
-        fs_factory=fs_factory,
-        use_case=object(),  # value is ignored by our stub
-    )
-
-    # Assert
     assert fses == [fake_fs]
     assert fake_fs.staged == {Path("hello.py"): "print('updated')"}
 
@@ -63,10 +48,7 @@ def test_run_sync_single_file_success(
 # ────────────────────────────────────
 # 2. directory with mixed success / failure
 # ────────────────────────────────────
-def test_run_sync_directory_partial_failure(
-    tmp_path, patch_progress, patch_summary, monkeypatch
-):
-    # Arrange
+def test_run_sync_directory_partial_failure(tmp_path, patch_progress, patch_summary):
     a = tmp_path / "a.py"
     a.write_text("a=1")
     b = tmp_path / "b.py"
@@ -76,17 +58,16 @@ def test_run_sync_directory_partial_failure(
     fake_fs = FakeFS(tmp_path, modules=modules_map)
     fs_factory = lambda root: fake_fs
 
-    # two calls: first -> success, second -> failure
-    def fake_safe_update(use_case, module, *, style):
-        if module.path.name == "a.py":
-            return module, "a=42", None
-        return module, None, RuntimeError("boom")
+    class FakeUseCase:
+        def run(self, modules, *, style):
+            for mod in modules:
+                if mod.path.name == "a.py":
+                    yield UpdateResult(mod, "a=42")
+                else:
+                    yield UpdateResult(mod, error=RuntimeError("boom"))
 
-    monkeypatch.setattr(uut, "safe_update", fake_safe_update)
+    fses = uut.run_sync(paths=[tmp_path], fs_factory=fs_factory, use_case=FakeUseCase())
 
-    fses = uut.run_sync(paths=[tmp_path], fs_factory=fs_factory, use_case=object())
-
-    # Assert
     assert fses == [fake_fs]
     assert fake_fs.staged == {Path("a.py"): "a=42"}  # only the good one
 
@@ -94,15 +75,17 @@ def test_run_sync_directory_partial_failure(
 # ────────────────────────────────────
 # 3. unsupported path is ignored
 # ────────────────────────────────────
-def test_run_sync_ignores_non_python_files(
-    tmp_path, patch_progress, patch_summary, monkeypatch
-):
+def test_run_sync_ignores_non_python_files(tmp_path, patch_progress, patch_summary):
     notes = tmp_path / "notes.txt"
     notes.write_text("deep philosophy")
 
     fake_fs = FakeFS(tmp_path)
     fs_factory = lambda root: fake_fs
-    monkeypatch.setattr(uut, "safe_update", lambda *a, **k: None)
 
-    fses = uut.run_sync(paths=notes, fs_factory=fs_factory, use_case=object())
+    class FakeUseCase:
+        def run(self, modules, *, style):
+            if False:  # pragma: no cover
+                yield  # never reached
+
+    fses = uut.run_sync(paths=notes, fs_factory=fs_factory, use_case=FakeUseCase())
     assert fses == []  # nothing processed, nothing returned
