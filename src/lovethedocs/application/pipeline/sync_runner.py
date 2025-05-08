@@ -42,6 +42,7 @@ def run_sync(
             root = Path(raw).resolve()
 
             # project-scoped FS
+            # TODO: refactor for better readability
             if root.is_file() and root.suffix == ".py":
                 fs = fs_factory(root.parent)
                 module_map = {root.relative_to(root.parent): root.read_text("utf-8")}
