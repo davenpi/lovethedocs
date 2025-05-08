@@ -3,8 +3,9 @@ Lightweight test doubles shared across the suite.
 """
 
 from __future__ import annotations
-from pathlib import Path
+
 from contextlib import contextmanager
+from pathlib import Path
 
 from lovethedocs.domain import docstyle
 from lovethedocs.domain.models import SourceModule
@@ -58,7 +59,12 @@ class DummyFS:
 @contextmanager
 def silent_progress():
     """No-op replacement for rich progress bars."""
+
     class _P:
-        def add_task(self, *_ , **__): return None
-        def advance(self, *_): pass
+        def add_task(self, *_, **__):
+            return None
+
+        def advance(self, *_):
+            pass
+
     yield _P()

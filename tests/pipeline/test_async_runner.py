@@ -2,8 +2,9 @@
 from pathlib import Path
 
 import pytest
-from tests.helpers import DummyFS, DummyUseCase
+
 from lovethedocs.application.pipeline import async_runner
+from tests.helpers import DummyFS, DummyUseCase
 
 
 @pytest.fixture

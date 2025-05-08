@@ -1,4 +1,5 @@
 import pytest
+
 from lovethedocs.application.config import Settings
 
 
@@ -21,7 +22,7 @@ def test_settings_immutability():
     settings = Settings()
     with pytest.raises(AttributeError):
         settings.model = "different-model"
-    
+
     with pytest.raises(AttributeError):
         settings.doc_style = "different-style"
 
@@ -31,7 +32,7 @@ def test_settings_equality():
     settings1 = Settings(model="model-a", doc_style="style-a")
     settings2 = Settings(model="model-a", doc_style="style-a")
     settings3 = Settings(model="model-b", doc_style="style-a")
-    
+
     assert settings1 == settings2
     assert settings1 != settings3
     assert hash(settings1) == hash(settings2)

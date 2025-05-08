@@ -58,9 +58,9 @@ async def _inner(
 
             tasks = [
                 asyncio.create_task(
-                    safe_update_async(use_case, m, style=style, sem=sem)
+                    safe_update_async(use_case, src_mod, style=style, sem=sem)
                 )
-                for m in src_modules
+                for src_mod in src_modules
             ]
 
             for coro in asyncio.as_completed(tasks):

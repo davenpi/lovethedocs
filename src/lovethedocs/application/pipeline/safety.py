@@ -36,9 +36,8 @@ async def safe_update_async(
     sem: asyncio.Semaphore,
 ) -> Result:
     """Async wrapper honouring a global semaphore."""
-    
+
     async with sem:
-        print(f"starting {module.path} — {sem._value} tickets left")
         try:
             async for mod, new_code in use_case.run_async(
                 [module], style=style, concurrency=1
