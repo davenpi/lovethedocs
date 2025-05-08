@@ -28,7 +28,7 @@ def dummy_viewer():
 
 # ---------- unit tests ---------------------------------------------------- #
 def test_no_staged_files(tmp_path, dummy_viewer, capsys):
-    fs = ProjectFileSystem(tmp_path)           # nothing staged
+    fs = ProjectFileSystem(tmp_path)  # nothing staged
     diff_review.batch_review(fs, diff_viewer=dummy_viewer, interactive=False)
 
     captured = capsys.readouterr().out
