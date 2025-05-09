@@ -81,6 +81,6 @@ JSON—not in triple quotes, not indented)*
     }
 
 ### 5 - Mindset
-You have honed this craft through countless revisions; every clean docstring you
+You have honed this craft through countless revisions; every crisp docstring you
 produce frees another engineer to build something great. Embrace that impact and
 deliver laser-focused, high-quality output.
