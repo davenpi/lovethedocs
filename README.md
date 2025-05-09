@@ -38,6 +38,46 @@ lovethedocs clean  path/to/project/   # wipe staged edits
 Tested on macOS; supported diff viewers: `code`, `git`, `terminal`.
 Help adding others is welcome!
 
+## 🎯 Example
+
+Before:
+
+```python
+def process_data(data, threshold):
+    # Process data according to threshold
+    result = []
+    for item in data:
+        if item > threshold:
+            result.append(item * 2)
+    return result
+```
+
+After:
+
+```python
+def process_data(data: list, threshold: float) -> list:
+    """
+    Filter and transform data based on a threshold value.
+
+    Parameters
+    ----------
+    data : list
+        The input data list to process.
+    threshold : float
+        Values above this threshold will be processed.
+
+    Returns
+    -------
+    list
+        A new list containing doubled values of items that exceeded the threshold.
+    """
+    result = []
+    for item in data:
+        if item > threshold:
+            result.append(item * 2)
+    return result
+```
+
 ### CLI cheatsheet
 
 | Goal                    | Command                                          |
