@@ -1,11 +1,10 @@
 from pathlib import Path
 
 from lovethedocs.application.pipeline import sync_runner as uut
-from lovethedocs.domain.models.update_result import UpdateResult
 from lovethedocs.domain.docstyle.base import DocStyle
+from lovethedocs.domain.models.update_result import UpdateResult
 
 STYLE = DocStyle.from_string("numpy")
-
 
 
 # ────────────────────────────────────
@@ -43,7 +42,9 @@ def test_run_sync_single_file_success(tmp_path, patch_progress, patch_summary):
             mod = modules[0]
             yield UpdateResult(mod, "print('updated')")
 
-    fses = uut.run_sync(paths=file_path, fs_factory=fs_factory, use_case=FakeUseCase(), style=STYLE)
+    fses = uut.run_sync(
+        paths=file_path, fs_factory=fs_factory, use_case=FakeUseCase(), style=STYLE
+    )
 
     assert fses == [fake_fs]
     assert fake_fs.staged == {Path("hello.py"): "print('updated')"}
@@ -70,7 +71,9 @@ def test_run_sync_directory_partial_failure(tmp_path, patch_progress, patch_summ
                 else:
                     yield UpdateResult(mod, error=RuntimeError("boom"))
 
-    fses = uut.run_sync(paths=[tmp_path], fs_factory=fs_factory, use_case=FakeUseCase(), style=STYLE)
+    fses = uut.run_sync(
+        paths=[tmp_path], fs_factory=fs_factory, use_case=FakeUseCase(), style=STYLE
+    )
 
     assert fses == [fake_fs]
     assert fake_fs.staged == {Path("a.py"): "a=42"}  # only the good one
@@ -91,5 +94,7 @@ def test_run_sync_ignores_non_python_files(tmp_path, patch_progress, patch_summa
             if False:  # pragma: no cover
                 yield  # never reached
 
-    fses = uut.run_sync(paths=notes, fs_factory=fs_factory, use_case=FakeUseCase(), style=STYLE)
+    fses = uut.run_sync(
+        paths=notes, fs_factory=fs_factory, use_case=FakeUseCase(), style=STYLE
+    )
     assert fses == []  # nothing processed, nothing returned

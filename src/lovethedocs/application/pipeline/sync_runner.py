@@ -15,7 +15,6 @@ from .progress import make_progress
 from .summary import summarize
 
 
-
 def run_sync(
     *,
     paths: Union[str | Path, Sequence[str | Path]],

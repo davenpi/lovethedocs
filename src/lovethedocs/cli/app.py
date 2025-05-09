@@ -60,9 +60,7 @@ def update(
         "numpy",
         "-s",
         "--style",
-        help=(
-            "Docstring style to use (numpy or google)."
-        ),
+        help=("Docstring style to use (numpy or google)."),
     ),
     review: bool = typer.Option(
         False,

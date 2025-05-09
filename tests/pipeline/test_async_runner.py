@@ -12,9 +12,9 @@ from typing import Dict
 import pytest
 
 from lovethedocs.application.pipeline import async_runner as uut
+from lovethedocs.domain.docstyle.base import DocStyle
 from lovethedocs.domain.models import SourceModule
 from lovethedocs.domain.models.update_result import UpdateResult
-from lovethedocs.domain.docstyle.base import DocStyle
 
 STYLE = DocStyle.from_string("numpy")
 
@@ -123,9 +123,7 @@ def test_run_async_ignores_non_python(tmp_path, patch_progress, patch_summary):
 # 4. semaphore limits concurrent coroutines
 # ────────────────────────────────────────────────────────────
 @pytest.mark.parametrize("concurrency", [1, 2])
-def test_semaphore_respected(
-    tmp_path, patch_progress, patch_summary, concurrency
-):
+def test_semaphore_respected(tmp_path, patch_progress, patch_summary, concurrency):
     # create 5 modules to force overlap
     for i in range(5):
         (tmp_path / f"m{i}.py").write_text("x")

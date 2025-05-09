@@ -5,9 +5,9 @@ Public entry-point for documentation update pipelines.
 from pathlib import Path
 from typing import Callable, Sequence, Union
 
+from lovethedocs.domain.docstyle.base import DocStyle
 from lovethedocs.domain.use_cases.update_docs import DocumentationUpdateUseCase
 from lovethedocs.gateways.project_file_system import ProjectFileSystem
-from lovethedocs.domain.docstyle.base import DocStyle
 
 from .async_runner import run_async
 from .factory import fs_factory, make_use_case
