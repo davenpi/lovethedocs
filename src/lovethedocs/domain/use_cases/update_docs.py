@@ -80,7 +80,7 @@ class DocumentationUpdateUseCase:
     #  Async API                                                         #
     # ------------------------------------------------------------------ #
     async def run_async(
-        self, modules: Iterable[SourceModule], *, style: DocStyle, concurrency: int = 6
+        self, modules: Iterable[SourceModule], *, style: DocStyle, concurrency: int
     ) -> AsyncIterator[UpdateResult]:
         """
         Asynchronously update documentation for modules with limited concurrency.
@@ -95,7 +95,7 @@ class DocumentationUpdateUseCase:
         style : DocStyle
             Documentation style to apply.
         concurrency : int, optional
-            Maximum number of concurrent updates (default is 6).
+            Maximum number of concurrent updates.
 
         Yields
         ------
