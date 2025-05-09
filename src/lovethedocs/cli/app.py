@@ -30,24 +30,24 @@ app = typer.Typer(
     name="lovethedocs",
     add_completion=True,
     help=(
-        "Improve Python docstrings with help from an LLM.\n\n"
-        "Typical workflow:\n\n"
-        "lovethedocs update <path>    # call the LLM to update docs \n\n"
-        "lovethedocs review <path>    # open diffs in your viewer\n\n"
-        "lovethedocs update -r <path> # update & review in one step\n\n"
+        "Automate Python docstrings in seconds.\n\n"
+        "Quick workflow:\n\n"
+        "lovethedocs update -c 8 <path>            # fast with 8 workers\n\n"
+        "lovethedocs review <path>                 # open diffs\n\n"
+        "lovethedocs clean <path>                  # remove path/.lovethedocs\n\n"
+        "lovethedocs update -s google -r <path>    # generate & review, Google style\n\n"
     ),
 )
 
 example = (
     "Examples\n\n"
     "--------\n\n"
-    "lovethedocs update gateways/ application/      # stage edits only\n\n"
-    "lovethedocs update -r gateways/                # stage and review\n\n"
-    "lovethedocs update -a 6 src/                   # run with 6 concurrent requests"
+    "lovethedocs update -c 8 src/                  # fast, 8 concurrent requests\n\n"
+    "lovethedocs update -s google -r src/          # Google style; generate & review\n\n"
 )
 
 
-@app.command(help="Generate new docstrings and stage diffs.\n\n" + example)
+@app.command(help="Generate & stage docstrings (use -s STYLE and -c N).\n\n" + example)
 def update(
     paths: List[Path] = typer.Argument(
         ...,
@@ -119,8 +119,14 @@ def update(
                 interactive=True,
             )
 
+review_example = (
+    "Examples\n\n"
+    "--------\n\n"
+    "lovethedocs review src/                      # open diffs for review (VSCode defualt)\n\n"
+    "lovethedocs review -v git src/               # use git as a diff viewer\n\n"
+)
 
-@app.command()
+@app.command(help="Open staged documentation edits in the specified diff viewer.\n\n" + review_example)
 def review(
     paths: List[Path] = typer.Argument(
         ...,
@@ -135,7 +141,7 @@ def review(
         help="Prompt before moving to the next diff.",
     ),
     viewer: str = typer.Option(
-        "auto",
+        "code",
         "-v",
         "--viewer",
         help="Diff viewer to use (auto, vscode, git, terminal).",
