@@ -14,6 +14,9 @@ import pytest
 from lovethedocs.application.pipeline import async_runner as uut
 from lovethedocs.domain.models import SourceModule
 from lovethedocs.domain.models.update_result import UpdateResult
+from lovethedocs.domain.docstyle.base import DocStyle
+
+STYLE = DocStyle.from_string("numpy")
 
 
 # ────────────────────────────────────────────────────────────
@@ -59,6 +62,7 @@ def test_run_async_single_file_success(tmp_path, patch_progress, patch_summary):
         concurrency=2,
         fs_factory=_fs_factory,
         use_case=FakeUseCase(),
+        style=STYLE,
     )
 
     assert fs.staged == {Path("demo.py"): "print('x')\n# updated"}
@@ -86,6 +90,7 @@ def test_run_async_directory_partial_failure(tmp_path, patch_progress, patch_sum
         concurrency=1,
         fs_factory=_fs_factory,
         use_case=FakeUseCase(),
+        style=STYLE,
     )
 
     assert Path("bad.py") not in fs.staged
@@ -109,6 +114,7 @@ def test_run_async_ignores_non_python(tmp_path, patch_progress, patch_summary):
         concurrency=1,
         fs_factory=_fs_factory,
         use_case=FakeUseCase(),
+        style=STYLE,
     )
     assert result == []  # runner skips unsupported path
 
@@ -149,6 +155,7 @@ def test_semaphore_respected(
         concurrency=concurrency,
         fs_factory=_fs_factory,
         use_case=FakeUseCase(),
+        style=STYLE,
     )
 
     assert max_active <= concurrency

@@ -6,7 +6,6 @@ import asyncio
 from pathlib import Path
 from typing import Callable, List, Sequence, Union
 
-from lovethedocs.application import config
 from lovethedocs.domain import docstyle
 from lovethedocs.domain.models import SourceModule
 from lovethedocs.domain.use_cases.update_docs import DocumentationUpdateUseCase
@@ -14,9 +13,6 @@ from lovethedocs.gateways.project_file_system import ProjectFileSystem
 
 from .progress import make_progress
 from .summary import summarize
-
-cfg = config.Settings()
-style = docstyle.DocStyle.from_string(cfg.doc_style)
 
 
 async def _inner(
@@ -78,6 +74,7 @@ def run_async(
     concurrency: int,
     fs_factory: Callable[[Path], ProjectFileSystem],
     use_case: DocumentationUpdateUseCase,
+    style: docstyle.DocStyle,
 ) -> List[ProjectFileSystem]:
     """Entry-point called by pipeline.__init__."""
     if isinstance(paths, (str, Path)):

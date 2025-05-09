@@ -15,4 +15,3 @@ class Settings:
     """
 
     model: str = "gpt-4.1"
-    doc_style: str = "numpy"

@@ -14,8 +14,6 @@ from lovethedocs.gateways.project_file_system import ProjectFileSystem
 from .progress import make_progress
 from .summary import summarize
 
-cfg = config.Settings()
-style = docstyle.DocStyle.from_string(cfg.doc_style)
 
 
 def run_sync(
@@ -23,7 +21,7 @@ def run_sync(
     paths: Union[str | Path, Sequence[str | Path]],
     fs_factory: Callable[[Path], ProjectFileSystem],
     use_case: DocumentationUpdateUseCase,
-    style: docstyle.DocStyle = style,
+    style: docstyle.DocStyle,
 ) -> List[ProjectFileSystem]:
     """Serial but failure-tolerant pipeline."""
     # — normalise input

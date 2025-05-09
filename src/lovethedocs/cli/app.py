@@ -56,6 +56,14 @@ def update(
         metavar="PATHS",
         help="Project roots or package paths to process.",
     ),
+    style: str = typer.Option(
+        "numpy",
+        "-s",
+        "--style",
+        help=(
+            "Docstring style to use (numpy or google)."
+        ),
+    ),
     review: bool = typer.Option(
         False,
         "-r",
@@ -77,7 +85,7 @@ def update(
         help=(
             "Number of concurrent requests to the LLM. "
             "0 (default) keeps the synchronous behavior; "
-            "Use 4-8 for a bigger speedup."
+            "Use 4-8 for more speed."
         ),
     ),
 ) -> None:
@@ -91,6 +99,8 @@ def update(
     ----------
     paths : List[Path]
         Project roots or package paths to process.
+    style : str, optional
+        Docstring style to use ('numpy' or 'google'). Default is 'numpy'.
     review : bool, optional
         If True, open diffs immediately after generation. Default is False.
     viewer : str, optional
@@ -98,7 +108,8 @@ def update(
     concurrency : int, optional
         Number of concurrent requests to the LLM. 0 (default) processes synchronously.
     """
-    file_systems = run_pipeline(paths, concurrency=concurrency)
+    style = style.lower() or "numpy"
+    file_systems = run_pipeline(paths, concurrency=concurrency, style=style)
     selected_viewer = resolve_viewer(viewer)
     if review:
         console = Console()
