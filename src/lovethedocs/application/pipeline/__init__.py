@@ -48,7 +48,7 @@ def run_pipeline(
     style = DocStyle.from_string(style)
 
     async_mode = concurrency > 0
-    use_case = use_case_factory(async_mode=async_mode)
+    use_case = use_case_factory(async_mode=async_mode, style=style)
 
     if async_mode:
         return run_async(

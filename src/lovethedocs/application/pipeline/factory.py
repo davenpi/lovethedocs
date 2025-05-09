@@ -23,14 +23,15 @@ from lovethedocs.gateways.project_file_system import ProjectFileSystem
 
 
 @lru_cache
-def make_use_case(*, async_mode: bool = False) -> DocumentationUpdateUseCase:
+def make_use_case(
+    *, async_mode: bool = False, style: docstyle.DocStyle
+) -> DocumentationUpdateUseCase:
     """
     Return a configured DocumentationUpdateUseCase.
 
     Cached so repeated calls share the same heavy objects.
     """
     cfg = config.Settings()
-    style = docstyle.DocStyle.from_string(cfg.doc_style)
     Client = AsyncOpenAIClientAdapter if async_mode else OpenAIClientAdapter
 
     generator = ModuleEditGenerator(

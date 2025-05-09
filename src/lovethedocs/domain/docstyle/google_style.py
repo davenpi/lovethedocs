@@ -1,18 +1,18 @@
 from lovethedocs.domain.docstyle.base import DocStyle
 
 
-class NumPyDocStyle(DocStyle):
-    name = "numpy"
+class GoogleDocStyle(DocStyle):
+    name = "google"
     section_order = (
-        "Parameters",
+        "Args",
         "Returns",
-        "Yields",
         "Raises",
+        "Yields",
         "Examples",
         "Notes",
         "References",
     )
 
 
-# Register the NumPyDocStyle in the registry
-DocStyle.register("numpy", NumPyDocStyle)
+# Register the GoogleDocStyle in the registry
+DocStyle.register("google", GoogleDocStyle)
