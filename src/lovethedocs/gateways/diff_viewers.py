@@ -80,13 +80,47 @@ class GitDiffViewer(DiffViewerPort):
         staged : Path
             The path to the staged or modified file.
         """
-        subprocess.run(
-            ["git", "--no-pager", "diff", "--no-index", str(original), str(staged)],
-            check=False,
-        )
+        try:
+            subprocess.run(
+                ["git", "--no-pager", "diff", "--no-index", str(original), str(staged)],
+                check=False,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            raise DiffViewerError("Git ('git') not found on PATH.")
+
+
+class CursorDiffViewer(DiffViewerPort):
+    """Diff viewer that launches Cursor to show file differences."""
+
+    def view(self, original: Path, staged: Path) -> None:
+        """
+        Open a diff view between two files using Cursor.
+
+        Parameters
+        ----------
+        original : Path
+            The path to the original file.
+        staged : Path
+            The path to the staged or modified file.
+
+        Raises
+        ------
+        DiffViewerError
+            If the Cursor CLI ('cursor') is not found on the system PATH or the command
+            fails.
+        """
+        try:
+            subprocess.run(
+                ["cursor", "-r", "-d", str(original), str(staged)],
+                check=True,
+                capture_output=True,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            raise DiffViewerError("Cursor CLI ('cursor') not found on PATH.")
 
 
 _VIEWER_REGISTRY = {
+    "cursor": CursorDiffViewer,
     "code": CodeCLIDiffViewer,
     "vscode": CodeCLIDiffViewer,
     "git": GitDiffViewer,
@@ -98,15 +132,15 @@ def resolve_viewer(name: str = "auto") -> DiffViewerPort:
     """
     Return an instantiated DiffViewerPort based on the given viewer name.
 
-    If 'auto', prefer VS Code if available, then Git, then fall back to a terminal diff.
-    If a specific name is given, instantiate the corresponding viewer or raise
-    DiffViewerError.
+    If 'auto', prefer Cursor if available, then VS Code, then Git, then fall back to a
+    terminal diff. If a specific name is given, instantiate the corresponding viewer or
+    raise DiffViewerError.
 
     Parameters
     ----------
     name : str, default 'auto'
-        The name of the diff viewer to use ('auto', 'code', 'vscode', 'git', or
-        'terminal').
+        The name of the diff viewer to use ('auto', 'cursor', 'code', 'vscode', 'git',
+        or 'terminal').
 
     Returns
     -------
@@ -125,6 +159,9 @@ def resolve_viewer(name: str = "auto") -> DiffViewerPort:
         except KeyError as exc:
             raise DiffViewerError(f"Unknown diff viewer '{name}'.") from exc
 
+    # prefer cursor if available, then code, then git, then terminal
+    if shutil.which("cursor"):
+        return CursorDiffViewer()
     if shutil.which("code"):
         return CodeCLIDiffViewer()
     if shutil.which("git"):

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 lovethedocs - Typer CLI
 =======================
@@ -21,6 +20,7 @@ from typing import List
 import typer
 from rich.console import Console
 
+from lovethedocs import __version__
 from lovethedocs.application import diff_review
 from lovethedocs.application.pipeline import run_pipeline
 from lovethedocs.gateways.diff_viewers import resolve_viewer
@@ -33,11 +33,16 @@ app = typer.Typer(
         "Automate Python docstrings in seconds.\n\n"
         "Quick workflow:\n\n"
         "lovethedocs update -c 8 <path>            # fast with 8 workers\n\n"
-        "lovethedocs review <path>                 # open diffs\n\n"
+        "lovethedocs review <path>                 # open diffs (Cursor default)\n\n"
         "lovethedocs clean <path>                  # remove path/.lovethedocs\n\n"
         "lovethedocs update -s google -r <path>    # generate & review, Google style\n\n"
     ),
 )
+
+@app.command()
+def version() -> None:
+    """Show the version and exit."""
+    typer.echo(f"lovethedocs version {__version__}")
 
 example = (
     "Examples\n\n"
@@ -69,10 +74,10 @@ def update(
         help="Open diffs immediately after generation.",
     ),
     viewer: str = typer.Option(
-        "auto",
+        None,
         "-v",
         "--viewer",
-        help="Diff viewer to use (auto, vscode, git, terminal).",
+        help="Diff viewer to use (auto, cursor, vscode, git, terminal).",
     ),
     concurrency: int = typer.Option(
         0,
@@ -82,8 +87,8 @@ def update(
         min=0,
         help=(
             "Number of concurrent requests to the LLM. "
-            "0 (default) keeps the synchronous behavior; "
-            "Use 4-8 for more speed."
+            "0 keeps the synchronous behavior; "
+            "Use 2+ for more speed."
         ),
     ),
 ) -> None:
@@ -102,14 +107,15 @@ def update(
     review : bool, optional
         If True, open diffs immediately after generation. Default is False.
     viewer : str, optional
-        Diff viewer to use ('auto', 'vscode', 'git', 'terminal'). Default is 'auto'.
+        Diff viewer to use ('auto', 'cursor', 'vscode', 'git', 'terminal'). Default
+        is 'auto'.
     concurrency : int, optional
-        Number of concurrent requests to the LLM. 0 (default) processes synchronously.
+        Number of concurrent requests to the LLM.
     """
     style = style.lower() or "numpy"
     file_systems = run_pipeline(paths, concurrency=concurrency, style=style)
-    selected_viewer = resolve_viewer(viewer)
-    if review:
+    if review or viewer:
+        selected_viewer = resolve_viewer(viewer)
         console = Console()
         console.rule("[bold magenta]Reviewing documentation updates")
         for fs in file_systems:
@@ -122,7 +128,7 @@ def update(
 review_example = (
     "Examples\n\n"
     "--------\n\n"
-    "lovethedocs review src/                      # open diffs for review (VSCode defualt)\n\n"
+    "lovethedocs review src/                      # open diffs for review (Cursor defualt)\n\n"
     "lovethedocs review -v git src/               # use git as a diff viewer\n\n"
 )
 
@@ -141,10 +147,10 @@ def review(
         help="Prompt before moving to the next diff.",
     ),
     viewer: str = typer.Option(
-        "code",
+        "cursor",
         "-v",
         "--viewer",
-        help="Diff viewer to use (auto, vscode, git, terminal).",
+        help="Diff viewer to use (auto, cursor, vscode, git, terminal).",
     ),
 ) -> None:
     """
@@ -157,8 +163,10 @@ def review(
     interactive : bool, optional
         If True, prompt before moving to the next diff. Default is True.
     viewer : str, optional
-        Diff viewer to use ('auto', 'vscode', 'git', 'terminal'). Default is 'auto'.
+        Diff viewer to use ('auto', 'cursor', 'vscode', 'git', 'terminal'). Default
+        is 'auto'.
     """
+    print("Viewer", viewer)
     selected_viewer = resolve_viewer(viewer)
     for root in paths:
         fs = ProjectFileSystem(root)

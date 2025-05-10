@@ -4,7 +4,8 @@ Polish your Python docs in 30 seconds.
 
 ## Why lovethedocs?
 
-**Fix your docs in 30 seconds for about 10¢.** Give your codebase consistent, professional docstrings before your next commit.
+**Fix your docs in 30 seconds for about 10¢.** Give your codebase consistent,
+helpful docstrings before your next commit.
 
 * **One‑command upgrades** – `lovethedocs update path/`
 * **Choose your style** – `NumPy` (default) or `Google` with `-s/--style`
@@ -24,7 +25,7 @@ export OPENAI_API_KEY=sk-...
 # 2. Stage docstrings for your project (NumPy style):
 lovethedocs update path/to/project/
 
-#    ...or choose Google style and review in one shot with 8 workers:
+# ...or choose Google style and review in one shot with 8 workers:
 lovethedocs update -s google -r -c 8 path/to/project/
 ```
 
@@ -35,7 +36,7 @@ lovethedocs review path/to/project/   # open diffs in your viewer
 lovethedocs clean  path/to/project/   # wipe staged edits
 ```
 
-Tested on macOS; supported diff viewers: `code`, `git`, `terminal`.
+Tested on macOS; supported diff viewers: `cursor`, `code`, `git`, `terminal`.
 Help adding others is welcome!
 
 ## 🎯 Example
