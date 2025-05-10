@@ -39,10 +39,12 @@ app = typer.Typer(
     ),
 )
 
+
 @app.command()
 def version() -> None:
     """Show the version and exit."""
     typer.echo(f"lovethedocs version {__version__}")
+
 
 example = (
     "Examples\n\n"
@@ -125,6 +127,7 @@ def update(
                 interactive=True,
             )
 
+
 review_example = (
     "Examples\n\n"
     "--------\n\n"
@@ -132,7 +135,11 @@ review_example = (
     "lovethedocs review -v git src/               # use git as a diff viewer\n\n"
 )
 
-@app.command(help="Open staged documentation edits in the specified diff viewer.\n\n" + review_example)
+
+@app.command(
+    help="Open staged documentation edits in the specified diff viewer.\n\n"
+    + review_example
+)
 def review(
     paths: List[Path] = typer.Argument(
         ...,
@@ -166,7 +173,6 @@ def review(
         Diff viewer to use ('auto', 'cursor', 'vscode', 'git', 'terminal'). Default
         is 'auto'.
     """
-    print("Viewer", viewer)
     selected_viewer = resolve_viewer(viewer)
     for root in paths:
         fs = ProjectFileSystem(root)

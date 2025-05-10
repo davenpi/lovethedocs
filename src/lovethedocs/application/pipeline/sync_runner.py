@@ -5,7 +5,6 @@ Concrete synchronous pipeline.
 from pathlib import Path
 from typing import Callable, List, Sequence, Union
 
-from lovethedocs.application import config
 from lovethedocs.domain import docstyle
 from lovethedocs.domain.models import SourceModule
 from lovethedocs.domain.use_cases.update_docs import DocumentationUpdateUseCase
