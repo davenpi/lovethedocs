@@ -117,7 +117,7 @@ def update(
     style = style.lower() or "numpy"
     file_systems = run_pipeline(paths, concurrency=concurrency, style=style)
     if review or viewer:
-        selected_viewer = resolve_viewer(viewer)
+        selected_viewer = resolve_viewer(name=(viewer or "auto"))
         console = Console()
         console.rule("[bold magenta]Reviewing documentation updates")
         for fs in file_systems:
