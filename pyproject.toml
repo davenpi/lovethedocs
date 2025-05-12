@@ -68,3 +68,17 @@ combine_as_imports = true
 line-length = 88
 target-version = "py311"
 extend-exclude = ["build", "dist"]
+
+# ---- bump-my-version configuration ----
+[tool.bumpversion]
+current_version = "0.2.5"
+commit = true
+tag = true
+sign_tags = false          # disable GPG signing for simplicity
+tag_name = "v{new_version}"
+
+[tool.bumpversion.file_patterns]
+"src/lovethedocs/__init__.py" = [
+    "__version__ = \"{current_version}\"",
+    "__version__ = \"{new_version}\""
+]
