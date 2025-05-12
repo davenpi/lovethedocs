@@ -1,45 +1,44 @@
 {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "title": "code_documentation_edits",
-    "type": "object",
-    "properties": {
-      "function_edits": {
-        "type": "array",
-        "items": { "$ref": "#/$defs/function_edit" }
-      },
-      "class_edits": {
-        "type": "array",
-        "items": { "$ref": "#/$defs/class_edit" }
-      }
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "code_documentation_edits",
+  "type": "object",
+  "properties": {
+    "function_edits": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/function_edit" }
     },
-    "required": ["function_edits", "class_edits"],
-    "additionalProperties": false,
-  
-    "$defs": {
-      "function_edit": {
-        "type": "object",
-        "properties": {   
-          "qualname":  { "type": "string" }, 
-          "signature": { "type": "string" },  
-          "docstring": { "type": "string" }
-          
-        },
-        "required": ["qualname", "docstring", "signature"],
-        "additionalProperties": false
+    "class_edits": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/class_edit" }
+    }
+  },
+  "required": ["function_edits", "class_edits"],
+  "additionalProperties": false,
+
+  "$defs": {
+    "function_edit": {
+      "type": "object",
+      "properties": {
+        "qualname": { "type": "string" },
+        "signature": { "type": "string" },
+        "docstring": { "type": "string" }
       },
-  
-      "class_edit": {
-        "type": "object",
-        "properties": {        
-          "qualname": { "type": "string" },         
-          "docstring":{ "type": "string" },
-          "method_edits": {
-            "type": "array",
-            "items": { "$ref": "#/$defs/function_edit" }
-          }
-        },
-        "required": ["qualname", "docstring", "method_edits"],
-        "additionalProperties": false
-      }
+      "required": ["qualname", "docstring", "signature"],
+      "additionalProperties": false
+    },
+
+    "class_edit": {
+      "type": "object",
+      "properties": {
+        "qualname": { "type": "string" },
+        "docstring": { "type": "string" },
+        "method_edits": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/function_edit" }
+        }
+      },
+      "required": ["qualname", "docstring", "method_edits"],
+      "additionalProperties": false
     }
   }
+}
