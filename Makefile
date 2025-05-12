@@ -9,7 +9,7 @@ test:
 #    Usage:  make bump VERSION=0.2.6
 bump:
 	@echo "Bumping to $(VERSION)"
-	bump-my-version --new-version $(VERSION) --allow-dirty
+	bump-my-version bump --new-version $(VERSION) --allow-dirty
 
 # 3 ▸ Build a clean wheel + sdist
 build: clean
