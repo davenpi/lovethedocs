@@ -52,3 +52,14 @@ exclude = ["tests*", "*/__pycache__*"]
 [tool.setuptools.package-data]
 "lovethedocs.gateways" = ["*.json"]
 "lovethedocs.domain.templates" = ["*.txt"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = ["lovethedocs"]   # add any local packages
+combine_as_imports = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+extend-exclude = ["build", "dist"]

@@ -1,0 +1,35 @@
+name: Lint & format with pre-commit # ← shows up in the Actions tab
+
+on: # when it runs
+  push:
+    branches: [main]
+  pull_request: # gates every PR
+  workflow_dispatch: # manual “Run workflow” button
+
+permissions:
+  contents: read # least-privilege
+
+jobs:
+  precommit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12" # runner’s interpreter
+          cache: "pip" # speeds up pip installs
+
+      # Install your dev tools only (pre-commit pulls each hook’s own wheels)
+      - name: Install pre-commit
+        run: pip install --upgrade pre-commit
+
+      # Download Ruff, isort, prettier, etc. into a cached dir
+      - name: Install hook environments
+        run: pre-commit install-hooks
+
+      # Run the exact same checks you run locally
+      - name: Run pre-commit
+        run: pre-commit run --all-files --show-diff-on-failure

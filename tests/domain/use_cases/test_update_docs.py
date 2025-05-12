@@ -10,7 +10,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, List
 
-
 from lovethedocs.domain.models import ModuleEdit, SourceModule
 from lovethedocs.domain.models.update_result import UpdateResult
 from lovethedocs.domain.use_cases.update_docs import DocumentationUpdateUseCase

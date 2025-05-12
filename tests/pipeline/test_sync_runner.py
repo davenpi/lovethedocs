@@ -61,7 +61,9 @@ def test_run_sync_directory_partial_failure(tmp_path, patch_progress, patch_summ
 
     modules_map = {Path("a.py"): "a=1", Path("b.py"): "b=2"}
     fake_fs = FakeFS(tmp_path, modules=modules_map)
-    fs_factory = lambda root: fake_fs
+
+    def fs_factory(root):  # noqa: D401
+        return fake_fs
 
     class FakeUseCase:
         def run(self, modules, *, style):
@@ -87,7 +89,9 @@ def test_run_sync_ignores_non_python_files(tmp_path, patch_progress, patch_summa
     notes.write_text("deep philosophy")
 
     fake_fs = FakeFS(tmp_path)
-    fs_factory = lambda root: fake_fs
+
+    def fs_factory(root):  # noqa: D401
+        return fake_fs
 
     class FakeUseCase:
         def run(self, modules, *, style):
