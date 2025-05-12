@@ -26,6 +26,9 @@ jobs:
       - name: Install pre-commit
         run: pip install --upgrade pre-commit
 
+      - name: Install dev dependencies
+        run: pip install -e ".[dev]"
+
       # Download Ruff, isort, prettier, etc. into a cached dir
       - name: Install hook environments
         run: pre-commit install-hooks

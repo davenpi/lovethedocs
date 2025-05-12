@@ -41,6 +41,11 @@ Issues = "https://github.com/davenpi/lovethedocs/issues"
 [project.scripts]
 lovethedocs = "lovethedocs.cli.app:app"
 
+# pyproject.toml  (add at bottom)
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.5",
+]
 
 [tool.setuptools]
 include-package-data = true
