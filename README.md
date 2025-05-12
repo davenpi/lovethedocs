@@ -4,13 +4,13 @@ Polish your Python docs in 30 seconds.
 
 ## Why lovethedocs?
 
-**Fix your docs in 30 seconds for about 10¢.** Give your codebase consistent,
-helpful docstrings before your next commit.
+Make your docs awesome. It takes ~30 seconds (API calls) and costs 10¢ on small
+repos.
 
 * **One‑command upgrades** – `lovethedocs update path/`
 * **Choose your style** – `NumPy` (default) or `Google` with `-s/--style`
 * **Non‑destructive** – edits live in `.lovethedocs/` until you accept them
-* **Parallel & fast** – set `-c/--concurrency` for multiple LLM requests
+* **Parallel & fast** – set `-c/--concurrency` for multiple requests at once
 
 ---
 
