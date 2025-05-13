@@ -24,5 +24,8 @@ class DocStyle:
     def from_string(cls, style_name: str) -> "DocStyle":
         """Factory method to create a DocStyle instance from a string."""
         if style_name not in cls._registry:
-            raise ValueError(f"Unknown documentation style: {style_name}")
+            raise ValueError(
+                f"Unknown documentation style: {style_name}"
+                f" (choose from: [{', '.join(cls._registry.keys())}])"
+            )
         return cls._registry[style_name]()

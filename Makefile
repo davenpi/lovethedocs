@@ -18,4 +18,4 @@ release: test publish-test
 	git push origin main --follow-tags
 
 clean:
-	rm -rf build dist *.egg-info
+	rm -rf build dist src/lovethedocs.egg-info

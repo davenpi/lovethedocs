@@ -5,7 +5,7 @@ from pathlib import Path
 from lovethedocs.ports import DiffViewerPort
 
 
-class DiffViewerError(RuntimeError):
+class DiffViewerError(ValueError):
     """Exception raised for errors related to diff viewers."""
 
     pass
@@ -111,7 +111,7 @@ class CursorDiffViewer(DiffViewerPort):
         """
         try:
             subprocess.run(
-                ["cursor", "-r", "-d", str(original), str(staged)],
+                ["cursor", "-d", str(original), str(staged)],
                 check=True,
                 capture_output=True,
             )
@@ -157,7 +157,10 @@ def resolve_viewer(name: str = "auto") -> DiffViewerPort:
         try:
             return _VIEWER_REGISTRY[name]()
         except KeyError as exc:
-            raise DiffViewerError(f"Unknown diff viewer '{name}'.") from exc
+            raise DiffViewerError(
+                f"Viewer '{name}' is not yet supported."
+                f" Available: {', '.join(_VIEWER_REGISTRY.keys())}."
+            ) from exc
 
     # prefer cursor if available, then code, then git, then terminal
     if shutil.which("cursor"):

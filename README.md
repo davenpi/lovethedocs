@@ -4,7 +4,7 @@ Polish your Python docs in 30 seconds.
 
 ## Why lovethedocs?
 
-Make your docs awesome. It takes ~30 seconds (API calls) and costs 10¢ on small
+Make your docs excellent. It takes ~30 seconds (API calls) and costs 10¢ on small
 repos.
 
 * **One‑command upgrades** – `lovethedocs update path/`

@@ -23,7 +23,7 @@ from rich.console import Console
 from lovethedocs import __version__
 from lovethedocs.application import diff_review
 from lovethedocs.application.pipeline import run_pipeline
-from lovethedocs.gateways.diff_viewers import resolve_viewer
+from lovethedocs.gateways.diff_viewers import DiffViewerError, resolve_viewer
 from lovethedocs.gateways.project_file_system import ProjectFileSystem
 
 app = typer.Typer(
@@ -115,7 +115,11 @@ def update(
         Number of concurrent requests to the LLM.
     """
     style = style.lower() or "numpy"
-    file_systems = run_pipeline(paths, concurrency=concurrency, style=style)
+    try:
+        file_systems = run_pipeline(paths, concurrency=concurrency, style=style)
+    except ValueError as e:
+        typer.echo(f"❌ {e}")
+        raise typer.Exit(code=1)
     if review or viewer:
         selected_viewer = resolve_viewer(name=(viewer or "auto"))
         console = Console()
@@ -173,7 +177,11 @@ def review(
         Diff viewer to use ('auto', 'cursor', 'vscode', 'git', 'terminal'). Default
         is 'auto'.
     """
-    selected_viewer = resolve_viewer(viewer)
+    try:
+        selected_viewer = resolve_viewer(viewer)
+    except DiffViewerError as e:
+        typer.echo(f"❌ {e}")
+        raise typer.Exit(code=1)
     for root in paths:
         fs = ProjectFileSystem(root)
         if not fs.staged_root.exists():
