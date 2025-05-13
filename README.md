@@ -81,7 +81,7 @@ def process_data(data: list, threshold: float) -> list:
 
 | Goal                    | Command                                          |
 |-------------------------|--------------------------------------------------|
-| Update one file         | `lovethedocs update my_module.py`                |
+| Update and review       | `lovethedocs update -r my_module.py`             |
 | Use Google style        | `lovethedocs update -s google path/`             |
 | Speed up (16 workers)   | `lovethedocs update -c 16 path/`                 |
 | Force terminal diff     | `lovethedocs review -v terminal path/`           |
