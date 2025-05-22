@@ -132,10 +132,10 @@ def update(
             )
 
 
-review_example = (
-    "Examples\n\n"
-    "--------\n\n"
-    "lovethedocs review src/                      # open diffs for review (Cursor defualt)\n\n"
+    review_example = (
+        "Examples\n\n"
+        "--------\n\n"
+    "lovethedocs review src/                      # open diffs for review (Cursor default)\n\n"
     "lovethedocs review -v git src/               # use git as a diff viewer\n\n"
 )
 

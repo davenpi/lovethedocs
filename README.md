@@ -7,7 +7,7 @@ Make your docstrings excellent with a single command. It’s fast (~30s), cheap
 
 * **One‑command upgrades** – `lovethedocs update path/`
 * **Choose your style** – `NumPy` (default) or `Google` with `-s/--style`
-* **Safe by defualt** – edits live in `path/.lovethedocs/` until you accept them
+* **Safe by default** – edits live in `path/.lovethedocs/` until you accept them
 * **Parallel & fast** – set `-c/--concurrency` to speed things up
 
 ---
